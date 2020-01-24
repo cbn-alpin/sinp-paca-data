@@ -1,0 +1,2 @@
+CREATE SCHEMA IF NOT EXISTS imports_cbna;
+CREATE SCHEMA IF NOT EXISTS cbna_flore_global;
