@@ -86,15 +86,26 @@ export PGPASSWORD="$db_pass";psql -h $db_host -U $db_user -d $db_name -f $sql_re
 echo -e "${Yel}Insertion dans GeoNature du territoire SINP${RCol}"
 export PGPASSWORD="$db_pass";psql -h $db_host -U $db_user -d $db_name -f "${sql_dir}/002_sinp_zone.sql" >> $log_file
 
-# Chargement des données CBNA dans un schema "releve_flore_globale"
 echo -e "${Yel}Chargement des données brutes du CBNA${RCol}"
 export PGPASSWORD="$db_pass";psql -h $db_host -U $db_user -d $db_name -f "${sql_dir}/003_import_cbna_raw.sql" >> $log_file
 
 /usr/bin/pg_restore --exit-on-error --verbose --jobs "${pg_restore_jobs}" \
     --host $db_host --port $db_port --username $db_user --dbname $db_name \
-    --schema "cbna_flore_global" --no-owner "${raw_dir}/releve_flore_global"
+    --schema "cbna_flore_global" --table "releve_flore_global" --no-acl --no-owner "${raw_dir}/releve_flore_global.bak"
 
 export PGPASSWORD="$db_pass";psql -h $db_host -U $db_user -d $db_name -f "${sql_dir}/004_rename_cbna.sql" >> $log_file
+
+echo -e "${Yel}Insertion des métadonnées...${RCol}"
+export PGPASSWORD="$db_pass";psql -h $db_host -U $db_user -d $db_name --echo-all -f "${sql_dir}/005_insert_meta.sql" >> $log_file
+
+echo -e "${Yel}Désactivation des triggers de la table synthese...${RCol}"
+export PGPASSWORD="$db_pass";psql -h $db_host -U $db_user -d $db_name --echo-all -f "${sql_dir}/006_disable_triggers.sql" >> $log_file
+
+echo -e "${Yel}Insertion dans GeoNature Synthese...${RCol}"
+export PGPASSWORD="$db_pass";psql -h $db_host -U $db_user -d $db_name --echo-all -f "${sql_dir}/007_insert_synthese.sql" >> $log_file
+
+echo -e "${Yel}Exécution et réactivation des triggers de la table synthese...${RCol}"
+export PGPASSWORD="$db_pass";psql -h $db_host -U $db_user -d $db_name --echo-all -f "${sql_dir}/008_enable_triggers.sql" >> $log_file
 
 #+----------------------------------------------------------------------------------------------------------+
 # Show time elapsed
