@@ -1,11 +1,7 @@
-TRUNCATE TABLE gn_synthese.synthese CONTINUE IDENTITY CASCADE;
-
-
--- +--------------------------------------------------------------------------------------------------------+
 DO $$
 DECLARE
     step INTEGER := 499999 ;
-    stopAt INTEGER := 1000000 ;
+    stopAt INTEGER := 7500000 ;
     offsetCnt INTEGER := 0 ;
 BEGIN
     WHILE offsetCnt < stopAt LOOP
@@ -31,12 +27,12 @@ BEGIN
             altitude_max, 
             count_min, 
             count_max, 
-            -- non_digital_proof, 
+            non_digital_proof, 
             -- digital_proof, 
             -- sample_number_proof, 
             -- determiner, 
-            -- comment_description, 
-            -- comment_context, 
+            comment_description, 
+            comment_context, 
             -- validator, 
             -- validation_comment, 
             -- meta_validation_date, 
@@ -140,16 +136,22 @@ BEGIN
                     WHEN codenombre = '5' OR codenombre LIKE '%;5' THEN 10000
                     ELSE NULL
                 END AS count_max, 
-                -- a.UNDEFINED::TEXT AS non_digital_proof, 
+                CASE 
+                    WHEN miseenherbier = TRUE THEN 'Conservatoire Botanique National Alpin (Herbier)'
+                    ELSE NULL
+                END AS non_digital_proof, 
                 -- a.UNDEFINED::TEXT AS digital_proof, 
                 -- a.UNDEFINED::TEXT AS sample_number_proof, 
                 -- a.UNDEFINED::VARCHAR AS determiner, 
-                -- a.UNDEFINED::TEXT AS comment_description, 
-                -- a.UNDEFINED::TEXT AS comment_context, 
+                NULLIF(str_comment, '')::VARCHAR AS comment_description, 
+                NULLIF(CONCAT_WS(' ', NULLIF(rel_commsta, ''), NULLIF(comrh, ''), NULLIF(rel_commilieu, '')), '')::VARCHAR AS comment_context, 
                 -- a.UNDEFINED::VARCHAR AS validator, 
                 -- a.UNDEFINED::TEXT AS validation_comment, 
                 -- a.UNDEFINED::TIMESTAMP AS meta_validation_date, 
-                gn_synthese.get_default_nomenclature_value('STATUT_OBS'::character varying) AS id_nomenclature_observation_status, 
+                CASE 
+                    WHEN miseenherbier = TRUE THEN ref_nomenclatures.get_id_nomenclature('STATUT_OBS', 'Pr')
+                    ELSE gn_synthese.get_default_nomenclature_value('STATUT_OBS')
+                END AS id_nomenclature_observation_status, 
                 gn_synthese.get_default_nomenclature_value('TYP_INF_GEO'::character varying) AS id_nomenclature_info_geo_type, 
                 gn_synthese.get_default_nomenclature_value('NAT_OBJ_GEO'::character varying) AS id_nomenclature_geo_object_nature, 
                 gn_synthese.get_default_nomenclature_value('METH_OBS'::character varying) AS id_nomenclature_obs_meth, 
@@ -157,7 +159,10 @@ BEGIN
                 gn_synthese.get_default_nomenclature_value('TECHNIQUE_OBS'::character varying) AS id_nomenclature_obs_technique, 
                 gn_synthese.get_default_nomenclature_value('NATURALITE'::character varying) AS id_nomenclature_naturalness, 
                 gn_synthese.get_default_nomenclature_value('STADE_VIE'::character varying) AS id_nomenclature_life_stage, 
-                gn_synthese.get_default_nomenclature_value('PREUVE_EXIST'::character varying) AS id_nomenclature_exist_proof, 
+                CASE 
+                    WHEN miseenherbier = TRUE THEN ref_nomenclatures.get_id_nomenclature('PREUVE_EXIST', '1') -- 1 = Oui
+                    ELSE gn_synthese.get_default_nomenclature_value('PREUVE_EXIST')
+                END AS id_nomenclature_exist_proof, 
                 gn_synthese.get_default_nomenclature_value('METH_DETERMIN'::character varying) AS id_nomenclature_determination_method, 
                 gn_synthese.get_default_nomenclature_value('ETA_BIO'::character varying) AS id_nomenclature_bio_condition, 
                 gn_synthese.get_default_nomenclature_value('SEXE'::character varying) AS id_nomenclature_sex,
@@ -183,7 +188,7 @@ BEGIN
             FROM imports_cbna.flore_v20190124 AS a 
             WHERE (a.uuidreleve_flore_sta IS NOT NULL AND a.uuidreleve_flore_sta != '' AND CHAR_LENGTH(a.uuidreleve_flore_sta) = 32) 
                 AND (a.uuidreleve_flore_str IS NOT NULL AND a.uuidreleve_flore_str != '' AND CHAR_LENGTH(a.uuidreleve_flore_str) = 32) 
-                AND (a.taxref_cd_nom < 1000000 AND a.taxref_cd_nom > 0 AND a.taxref_cd_nom NOT IN (134102, 47565, 105772) )
+                AND (a.taxref_cd_nom < 1000000 AND a.taxref_cd_nom > 0 AND a.taxref_cd_nom NOT IN (132062, 134102, 47565, 105772) )
                 AND (a.idreleve_flore_global NOT IN (5989093)) 
             ORDER BY entity_source_pk_value ASC 
             LIMIT step

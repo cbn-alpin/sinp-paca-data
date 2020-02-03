@@ -11,6 +11,3 @@ INSERT INTO ref_geo.l_areas (id_type, area_name, area_code, geom, "enable")
 	SELECT ref_geo.get_id_area_type('SINP'), nom_reg, insee_reg, geom, TRUE 
 	FROM ref_geo.tmp_region 
 	WHERE insee_reg = '93';
-
--- Remove useless table	
-DROP TABLE IF EXISTS ref_geo.tmp_region;
