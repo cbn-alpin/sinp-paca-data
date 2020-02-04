@@ -70,7 +70,8 @@ if ! [ -d "${raw_dir}/ADMIN-EXPRESS-COG_1-0__SHP__FRA_2017-06-19/" ]; then
     
     echo -e "${Yel}Création fichier SQL du contour des régions françaises...${RCol}"
     cd ${raw_dir}/ADMIN-EXPRESS-COG_1-0__SHP__FRA_2017-06-19/ADMIN-EXPRESS-COG/1_DONNEES_LIVRAISON_2017-06-19/ADE-COG_1-0_SHP_LAMB93_FR/
-    shp2pgsql -c -D -s 2154 -I REGION ref_geo.tmp_region > $sql_region_file_path;
+    echo "-- This content will be replaced by data downloaded via import.sh" > $sql_region_file_path;
+    shp2pgsql -c -D -s 2154 -I REGION ref_geo.tmp_region >> $sql_region_file_path;
 fi
 
 #+----------------------------------------------------------------------------------------------------------+

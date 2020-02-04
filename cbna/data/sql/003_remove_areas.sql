@@ -10,6 +10,3 @@ BEGIN;
     ALTER TABLE gn_synthese.cor_area_synthese ENABLE TRIGGER ALL;
     ALTER TABLE gn_synthese.cor_area_taxon ENABLE TRIGGER ALL;
 COMMIT;
-
--- Remove useless table	
-DROP TABLE IF EXISTS ref_geo.tmp_region;
