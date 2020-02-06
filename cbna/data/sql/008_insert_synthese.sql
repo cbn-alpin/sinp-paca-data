@@ -185,7 +185,7 @@ BEGIN
                 -- a.UNDEFINED::CHAR AS last_action, 
                 a.rel_datemodif::TIMESTAMP AS meta_update_date, 
                 a.rel_datecreatf::TIMESTAMP AS meta_create_date
-            FROM imports_cbna.flore_v20190124 AS a 
+            FROM imports_cbna.import_v20200124 AS a 
             WHERE (a.uuidreleve_flore_sta IS NOT NULL AND a.uuidreleve_flore_sta != '' AND CHAR_LENGTH(a.uuidreleve_flore_sta) = 32) 
                 AND (a.uuidreleve_flore_str IS NOT NULL AND a.uuidreleve_flore_str != '' AND CHAR_LENGTH(a.uuidreleve_flore_str) = 32) 
                 AND (a.taxref_cd_nom < 1000000 AND a.taxref_cd_nom > 0 AND a.taxref_cd_nom NOT IN (47565, 105772, 132062, 134102, 888838) )
