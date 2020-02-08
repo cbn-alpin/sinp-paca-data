@@ -1,6 +1,17 @@
 -- Clean data
-DELETE FROM gn_synthese.cor_area_taxon WHERE id_area = ref_geo.get_id_area_type('SINP');	
-DELETE FROM ref_geo.l_areas WHERE id_type = ref_geo.get_id_area_type('SINP');
+DELETE FROM gn_synthese.cor_area_synthese WHERE id_area IN (
+	SELECT id_area FROM ref_geo.l_areas WHERE id_type IN (
+		SELECT id_type FROM ref_geo.bib_areas_types WHERE type_code = 'SINP'
+	)
+);	
+DELETE FROM gn_synthese.cor_area_taxon WHERE id_area IN (
+	SELECT id_area FROM ref_geo.l_areas WHERE id_type IN (
+		SELECT id_type FROM ref_geo.bib_areas_types WHERE type_code = 'SINP'
+	)
+);		
+DELETE FROM ref_geo.l_areas WHERE id_type IN (
+	SELECT id_type FROM ref_geo.bib_areas_types WHERE type_code = 'SINP'
+);
 DELETE FROM ref_geo.bib_areas_types WHERE type_code = 'SINP';
 
 -- Insert SINP area

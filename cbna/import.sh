@@ -79,7 +79,7 @@ fi
 cd $CUR_DIR/
 
 echo -e "${Yel}Réinitialisation de toute la base${RCol}"
-export PGPASSWORD="$db_pass";psql -h $db_host -U $db_user -d $db_name -f "${sql_dir}/000_initialize.sql" >> $log_file
+export PGPASSWORD="$db_super_pass";psql -h $db_host -U $db_super_user -d $db_name -f "${sql_dir}/000_initialize.sql" >> $log_file
 
 echo -e "${Yel}Chargement du contour du territoire SINP${RCol}"
 export PGPASSWORD="$db_pass";psql -h $db_host -U $db_user -d $db_name -f $sql_region_file_path >> $log_file
@@ -88,7 +88,8 @@ echo -e "${Yel}Insertion dans GeoNature du territoire SINP${RCol}"
 export PGPASSWORD="$db_pass";psql -h $db_host -U $db_user -d $db_name -f "${sql_dir}/002_sinp_zone.sql" >> $log_file
 
 echo -e "${Yel}Suppression des zones géo inutiles${RCol}"
-export PGPASSWORD="$db_pass";psql -h $db_host -U $db_user -d $db_name -f "${sql_dir}/003_remove_areas.sql" >> $log_file
+echo -e "${Mag}${Blink}Peut durer jusqu'à 5 heures !${RCol}"
+export PGPASSWORD="$db_super_pass";psql -h $db_host -U $db_super_user -d $db_name -f "${sql_dir}/003_remove_areas.sql" >> $log_file
 
 echo -e "${Yel}Chargement des données brutes du CBNA${RCol}"
 export PGPASSWORD="$db_pass";psql -h $db_host -U $db_user -d $db_name -f "${sql_dir}/004_import_cbna_raw.sql" >> $log_file

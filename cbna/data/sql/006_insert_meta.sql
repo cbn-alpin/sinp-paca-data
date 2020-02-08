@@ -58,19 +58,20 @@ $BODY$
   LANGUAGE plpgsql IMMUTABLE;
 
 -- +--------------------------------------------------------------------------------------------------------+
+
+DELETE FROM gn_meta.cor_acquisition_framework_actor
+WHERE id_acquisition_framework = gn_meta.get_id_acquisition_framework('54d26761-2859-49d2-bb87-ef97448c8a27');
+
+DELETE FROM gn_meta.cor_dataset_actor
+WHERE id_dataset = gn_meta.get_id_dataset('b3988db2-2c94-4e1f-86f3-3a7184fc5f71');
+
 DELETE FROM utilisateurs.bib_organismes 
 WHERE id_organisme = utilisateurs.get_id_organization('f80af199-2873-499a-b4e1-99078873fb47');
 
 TRUNCATE TABLE gn_synthese.synthese CONTINUE IDENTITY CASCADE;
 
-DELETE FROM gn_meta.cor_dataset_actor
-WHERE id_dataset = gn_meta.get_id_dataset('b3988db2-2c94-4e1f-86f3-3a7184fc5f71');
-
 DELETE FROM gn_meta.t_datasets 
 WHERE unique_dataset_id = 'b3988db2-2c94-4e1f-86f3-3a7184fc5f71';
-
-DELETE FROM gn_meta.cor_acquisition_framework_actor
-WHERE id_acquisition_framework = gn_meta.get_id_acquisition_framework('54d26761-2859-49d2-bb87-ef97448c8a27');
 
 DELETE FROM gn_meta.t_acquisition_frameworks 
 WHERE unique_acquisition_framework_id = '54d26761-2859-49d2-bb87-ef97448c8a27';

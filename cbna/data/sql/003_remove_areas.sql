@@ -1,3 +1,4 @@
+-- Droits d'éxecution nécessaire : SUPER UTILISATUER
 -- Remove useless areas from l_areas
 BEGIN;
     ALTER TABLE gn_synthese.cor_area_synthese DISABLE TRIGGER ALL;

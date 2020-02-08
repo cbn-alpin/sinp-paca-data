@@ -188,7 +188,11 @@ BEGIN
             FROM imports_cbna.import_v20200124 AS a 
             WHERE (a.uuidreleve_flore_sta IS NOT NULL AND a.uuidreleve_flore_sta != '' AND CHAR_LENGTH(a.uuidreleve_flore_sta) = 32) 
                 AND (a.uuidreleve_flore_str IS NOT NULL AND a.uuidreleve_flore_str != '' AND CHAR_LENGTH(a.uuidreleve_flore_str) = 32) 
-                AND (a.taxref_cd_nom < 1000000 AND a.taxref_cd_nom > 0 AND a.taxref_cd_nom NOT IN (47565, 105772, 132062, 134102, 888838) )
+                AND (
+                    a.taxref_cd_nom < 1000000 
+                    AND a.taxref_cd_nom > 0 
+                    AND a.taxref_cd_nom NOT IN (47565, 105772, 132062, 134102, 141108, 434118, 888838, 892200, 892221) 
+                )
                 AND (a.idreleve_flore_global NOT IN (5989093)) 
             ORDER BY entity_source_pk_value ASC 
             LIMIT step
