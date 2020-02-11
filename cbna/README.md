@@ -11,5 +11,5 @@ Utiliser le script `import.sh` pour importer le jeu de données de test du CBNA.
 Pour transférer les données sur le serveur, utiliser `rsync` en testant avec l'option `--dry-run` (à supprimer quand tout est ok):
 
 ```
-rsync -avL --exclude *.log --exclude .gitignore --exclude settings.ini ./cbna admin@db-paca-sinp:/home/admin/data/ --dry-run
+rsync -avL --exclude logs --exclude .gitignore --exclude settings.ini --exclude data/raw ./cbna admin@db-paca-sinp:/home/admin/data/ --dry-run
 ```
