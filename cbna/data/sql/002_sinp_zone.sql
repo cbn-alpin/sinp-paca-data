@@ -20,5 +20,5 @@ VALUES ('Territoire SINP', 'SINP', 'Région PACA', 'IGN admin_express', 2017);
 
 INSERT INTO ref_geo.l_areas (id_type, area_name, area_code, geom, "enable")
 	SELECT ref_geo.get_id_area_type('SINP'), nom_reg, insee_reg, geom, TRUE 
-	FROM ref_geo.tmp_region 
+	FROM ref_geo.region_tmp 
 	WHERE insee_reg = '93';

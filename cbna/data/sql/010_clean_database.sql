@@ -1,2 +1,2 @@
 -- Remove useless table	
-DROP TABLE IF EXISTS ref_geo.tmp_region;
+DROP TABLE IF EXISTS ref_geo.region_tmp;

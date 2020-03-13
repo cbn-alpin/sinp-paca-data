@@ -5,6 +5,6 @@ DROP SCHEMA cbna_flore_global;
 CREATE TABLE imports_cbna.import_v20200124 AS (SELECT * FROM imports_cbna.source_v20200124);
 
 -- Suppression des données hors région PACA
-DELETE FROM imports_cbna.import_v20200124 AS i USING ref_geo.tmp_region AS r
+DELETE FROM imports_cbna.import_v20200124 AS i USING ref_geo.region_tmp AS r
     WHERE public.st_intersects(r.geom, i.flore_global_geom) = false 
     AND insee_reg = '93';
