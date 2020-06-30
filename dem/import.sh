@@ -31,7 +31,7 @@ source ${shared_dir}/functions.ini
 #+----------------------------------------------------------------------------------------------------------+
 # Check commands use by this script exist
 echo -e "${Yel}Check system needed commands exist...${RCol}"
-commands=("wget", "p7zip", "raster2pgsql", "psql", "jq")
+commands=("wget", "p7zip", "raster2pgsql", "psql", "jq", "gdalinfo")
 for cmd in "${commands[@]}"; do
     if [ ! -x $(command -v $cmd) ]; then
         echo -e "${Red}Error: please install '$cmd' command.${RCol}" >&2
@@ -66,7 +66,7 @@ if ! [ -d "${raw_dir}/${ign_ba_first_dir}/" ]; then
     raw_dem_file_path="${raw_dir}/bdalti_$ign_ba_version.7z"
     if ! [ -f "$raw_dem_file_path" ]; then
         echo -e "${Yel}Download DEM file...${RCol}"
-        wget $ign_ba_url -O $raw_dem_file_path
+        download $ign_ba_url $raw_dem_file_path
     fi
 
     echo -e "${Yel}Unzip archive file...${RCol}"

@@ -62,7 +62,7 @@ echo -e "${Whi}French administrative areas import script started at: `date -d @$
 if ! [ -d "${raw_data_shared_dir}/${ign_ae_first_dir}/" ]; then
     echo -e "${Yel}Downloading French admininstrative areas...${RCol}"
     if ! [ -f "$area_raw_file_path" ]; then
-        wget $ign_ae_url -O $area_raw_file_path
+        download $ign_ae_url $area_raw_file_path
     fi
 
     echo -e "${Yel}Uncompress archive file...${RCol}"
