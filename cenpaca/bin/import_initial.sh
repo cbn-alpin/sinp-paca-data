@@ -61,26 +61,56 @@ function main() {
     initScript "${@}"
     parseScriptOptions "${@}"
     loadScriptConfig "${setting_file_path-}"
-    redirectOutput "${log_imports}"
+    redirectOutput "${cp_log_imports}"
+    checkSuperuser
 
     #+----------------------------------------------------------------------------------------------------------+
     # Start script
     printInfo "Install CEN-PACA test dataset script started at: ${fmt_time_start}"
 
+    printInfo "Downloading CEN-PACA test data 2020-02-13 archive..."
+    local archive_filename="${cp_data_filename}.tar.bz2"
+    if [[ ! -f "${raw_dir}/${archive_filename}" ]]; then
+        rm -f "${raw_dir}/${archive_filename}"
+        curl -X POST https://content.dropboxapi.com/2/files/download \
+            --header "Authorization: Bearer ${cp_dropbox_token}" \
+            --header "Dropbox-API-Arg: {\"path\": \"${cp_dropbox_dir}/${archive_filename}\"}" \
+            > "${raw_dir}/${archive_filename}"
+     else
+        printVerbose "Archive file \"${archive_filename}\" already downloaded." ${Gra}
+    fi
+
+
     printInfo "Extracting import data SQL file..."
-    if [[ -f "${raw_dir}/${data_filename}.tar.bz2" ]]; then
-        if [[ ! -f "${raw_dir}/${data_filename}.sql" ]]; then
+    local sql_filename="${cp_data_filename}.sql"
+    if [[ -f "${raw_dir}/${archive_filename}" ]]; then
+        if [[ ! -f "${raw_dir}/${sql_filename}" ]]; then
             cd "${raw_dir}/"
-            tar jxvf "${raw_dir}/${data_filename}.tar.bz2"
+            tar jxvf "${raw_dir}/${archive_filename}"
         else
-            printVerbose "SQL file ${data_filename}.sql alread extracted." ${Gra}
+            printVerbose "SQL file \"${sql_filename}\" already extracted." ${Gra}
         fi
     fi
 
-    printInfo "Executing import data SQL file..."
+
+    # printInfo "Executing import data SQL file..."
+    # export PGPASSWORD="${db_pass}"; \
+    #     psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
+    #         -f "${raw_dir}/${sql_filename}"
+
+
+    printInfo "Inserting metadata into GeoNature database..."
     export PGPASSWORD="${db_pass}"; \
         psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -f "${raw_dir}/${data_filename}.sql"
+            -f "${sql_dir}/001_initialize_meta.sql"
+
+
+    printInfo "Transfering data from temporary import table to GeoNature synthese..."
+    local csv_filename="${cp_data_filename}.csv"
+    sudo -n -u "${pg_admin_name}" -s \
+        psql -d "${db_name}" \
+            -v csvFilePath="${raw_dir}/${csv_filename}" \
+            -f "${sql_dir}/002_copy_data.sql"
 
     #+----------------------------------------------------------------------------------------------------------+
     displayTimeElapsed
