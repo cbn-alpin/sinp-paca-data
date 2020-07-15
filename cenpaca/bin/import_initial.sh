@@ -68,7 +68,7 @@ function main() {
     # Start script
     printInfo "Install CEN-PACA test dataset script started at: ${fmt_time_start}"
 
-    printInfo "Downloading CEN-PACA test data 2020-02-13 archive..."
+    printMsg "Downloading CEN-PACA test data 2020-02-13 archive..."
     local archive_filename="${cp_data_filename}.tar.bz2"
     if [[ ! -f "${raw_dir}/${archive_filename}" ]]; then
         rm -f "${raw_dir}/${archive_filename}"
@@ -81,7 +81,7 @@ function main() {
     fi
 
 
-    printInfo "Extracting import data SQL file..."
+    printMsg "Extracting import data SQL file..."
     local sql_filename="${cp_data_filename}.sql"
     if [[ -f "${raw_dir}/${archive_filename}" ]]; then
         if [[ ! -f "${raw_dir}/${sql_filename}" ]]; then
@@ -93,24 +93,36 @@ function main() {
     fi
 
 
-    # printInfo "Executing import data SQL file..."
+    # printMsg "Executing import data SQL file..."
     # export PGPASSWORD="${db_pass}"; \
     #     psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
     #         -f "${raw_dir}/${sql_filename}"
 
 
-    printInfo "Inserting metadata into GeoNature database..."
+    printMsg "Inserting metadata into GeoNature database..."
     export PGPASSWORD="${db_pass}"; \
         psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
             -f "${sql_dir}/001_initialize_meta.sql"
 
 
-    printInfo "Transfering data from temporary import table to GeoNature synthese..."
-    local csv_filename="${cp_data_filename}.csv"
+    printMsg "Parsing SOURCE CSV file..."
+    cd "${root_dir}/import-parser/"
+    pipenv run python ./bin/gn_import_parser.py --type "so" "${raw_dir}/2020-02-13_cen-paca_source.sample.csv"
+
+    printMsg "Inserting sources into GeoNature database..."
+    local csv_filename="2020-02-13_cen-paca_source.sample_rti.csv"
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
             -v csvFilePath="${raw_dir}/${csv_filename}" \
-            -f "${sql_dir}/002_copy_data.sql"
+            -f "${sql_dir}/002_import_source.sql"
+
+
+    # printMsg "Transfering data from temporary import table to GeoNature synthese..."
+    # local csv_filename="${cp_data_filename}.csv"
+    # sudo -n -u "${pg_admin_name}" -s \
+    #     psql -d "${db_name}" \
+    #         -v csvFilePath="${raw_dir}/${csv_filename}" \
+    #         -f "${sql_dir}/002_copy_data.sql"
 
     #+----------------------------------------------------------------------------------------------------------+
     displayTimeElapsed
