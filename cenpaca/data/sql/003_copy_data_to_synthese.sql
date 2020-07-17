@@ -15,9 +15,12 @@ SET search_path = gn_synthese, pg_catalog;
 SET default_tablespace = '';
 SET default_with_oids = FALSE;
 
+\echo '-------------------------------------------------------------------------------'
+\echo 'Drop synthese primary key index'
+ALTER TABLE synthese DROP CONSTRAINT pk_synthese ;
 
 \echo '-------------------------------------------------------------------------------'
-\echo 'Drop synthese indexes'
+\echo 'Drop other synthese indexes'
 DROP INDEX i_synthese_altitude_max ;
 DROP INDEX i_synthese_altitude_min ;
 DROP INDEX i_synthese_cd_nom ;
@@ -28,7 +31,6 @@ DROP INDEX i_synthese_t_sources ;
 DROP INDEX i_synthese_the_geom_4326 ;
 DROP INDEX i_synthese_the_geom_local ;
 DROP INDEX i_synthese_the_geom_point ;
-DROP INDEX pk_synthese ;
 DROP INDEX unique_id_sinp_unique ;
 
 
@@ -92,7 +94,6 @@ ALTER TABLE synthese DROP CONSTRAINT enforce_geotype_the_geom_point ;
 ALTER TABLE synthese DROP CONSTRAINT enforce_srid_the_geom_4326 ;
 ALTER TABLE synthese DROP CONSTRAINT enforce_srid_the_geom_local ;
 ALTER TABLE synthese DROP CONSTRAINT enforce_srid_the_geom_point ;
-ALTER TABLE synthese DROP CONSTRAINT pk_synthese ;
 ALTER TABLE synthese DROP CONSTRAINT unique_id_sinp_unique ;
 
 
