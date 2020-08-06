@@ -176,5 +176,5 @@ COMMIT;
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Maintenance on "synthese"'
--- VACUUM FULL VERBOSE ref_geo.l_areas ;
--- ANALYSE VERBOSE ref_geo.l_areas ;
+VACUUM FULL VERBOSE ref_geo.l_areas ;
+ANALYSE VERBOSE ref_geo.l_areas ;
