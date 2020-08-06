@@ -1,5 +1,6 @@
 BEGIN;
 
+
 \echo '-------------------------------------------------------------------------------'
 \echo 'Copy CSV data into synthese'
 \echo 'GeoNature database compatibility : v2.4.1'
@@ -11,27 +12,40 @@ SET standard_conforming_strings = ON;
 SET check_function_bodies = FALSE;
 SET client_min_messages = warning;
 
-SET search_path = gn_synthese, pg_catalog;
+SET search_path = gn_synthese, public, pg_catalog;
 SET default_tablespace = '';
 SET default_with_oids = FALSE;
+
+
+\echo '-------------------------------------------------------------------------------'
+\echo 'Drop synthese primary key dependent constraints'
+ALTER TABLE cor_area_synthese DROP CONSTRAINT fk_cor_area_synthese_id_synthese ;
+ALTER TABLE cor_observer_synthese DROP CONSTRAINT fk_gn_synthese_id_synthese ;
+
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Drop synthese primary key index'
 ALTER TABLE synthese DROP CONSTRAINT pk_synthese ;
 
+
+\echo '-------------------------------------------------------------------------------'
+\echo 'Drop unique SINP id index on synthese'
+ALTER TABLE synthese DROP CONSTRAINT unique_id_sinp_unique ;
+DROP INDEX IF EXISTS unique_id_sinp_unique ;
+
+
 \echo '-------------------------------------------------------------------------------'
 \echo 'Drop other synthese indexes'
-DROP INDEX i_synthese_altitude_max ;
-DROP INDEX i_synthese_altitude_min ;
-DROP INDEX i_synthese_cd_nom ;
-DROP INDEX i_synthese_date_max ;
-DROP INDEX i_synthese_date_min ;
-DROP INDEX i_synthese_id_dataset ;
-DROP INDEX i_synthese_t_sources ;
-DROP INDEX i_synthese_the_geom_4326 ;
-DROP INDEX i_synthese_the_geom_local ;
-DROP INDEX i_synthese_the_geom_point ;
-DROP INDEX unique_id_sinp_unique ;
+DROP INDEX IF EXISTS i_synthese_altitude_max ;
+DROP INDEX IF EXISTS i_synthese_altitude_min ;
+DROP INDEX IF EXISTS i_synthese_cd_nom ;
+DROP INDEX IF EXISTS i_synthese_date_max ;
+DROP INDEX IF EXISTS i_synthese_date_min ;
+DROP INDEX IF EXISTS i_synthese_id_dataset ;
+DROP INDEX IF EXISTS i_synthese_t_sources ;
+DROP INDEX IF EXISTS i_synthese_the_geom_4326 ;
+DROP INDEX IF EXISTS i_synthese_the_geom_local ;
+DROP INDEX IF EXISTS i_synthese_the_geom_point ;
 
 
 \echo '-------------------------------------------------------------------------------'
@@ -94,7 +108,6 @@ ALTER TABLE synthese DROP CONSTRAINT enforce_geotype_the_geom_point ;
 ALTER TABLE synthese DROP CONSTRAINT enforce_srid_the_geom_4326 ;
 ALTER TABLE synthese DROP CONSTRAINT enforce_srid_the_geom_local ;
 ALTER TABLE synthese DROP CONSTRAINT enforce_srid_the_geom_point ;
-ALTER TABLE synthese DROP CONSTRAINT unique_id_sinp_unique ;
 
 
 \echo '-------------------------------------------------------------------------------'
@@ -109,6 +122,7 @@ ALTER TABLE synthese DISABLE TRIGGER tri_insert_cor_area_synthese ;
 \echo 'Copy CVS file to synthese'
 COPY synthese (
     id_source,
+    id_module,
     entity_source_pk_value,
     id_dataset,
     count_min,
@@ -121,16 +135,21 @@ COPY synthese (
     non_digital_proof,
     altitude_min,
     altitude_max,
-    geom_4326,
-    geom_point,
-    geom_local,
+    the_geom_4326,
+    the_geom_point,
+    the_geom_local,
     date_min,
     date_max,
+    validator,
     validation_comment,
     observers,
+    determiner,
+    id_digitiser,
+    comment_context,
     comment_description,
     meta_validation_date,
     meta_create_date,
+    meta_update_date,
     last_action
 )
 FROM :'csvFilePath'
@@ -139,7 +158,7 @@ WITH DELIMITER E'\t' CSV HEADER NULL '\N' ;
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Update "synthese_id_synthese_seq" sequence'
-SELECT SETVAL('synthese_id_synthese_seq', SELECT max(id_synthese) FROM synthese));
+SELECT SETVAL('synthese_id_synthese_seq', (SELECT MAX(id_synthese) FROM synthese));
 
 
 \echo '-------------------------------------------------------------------------------'
@@ -394,17 +413,11 @@ ALTER TABLE synthese ADD CONSTRAINT unique_id_sinp_unique
 \echo 'Replay actions on table "synthese" (tri_meta_dates_change_synthese)'
 
 \echo ' Update meta dates on "synthese"'
-UPDATE synthese SET meta_create_date = NOW() WHERE meta_create_date IS NULL;
-UPDATE synthese SET meta_update_date = NOW() WHERE meta_update_date IS NULL;
+UPDATE synthese SET meta_create_date = NOW() WHERE meta_create_date IS NULL ;
+UPDATE synthese SET meta_update_date = NOW() WHERE meta_update_date IS NULL ;
 
 \echo ' Enable "tri_meta_dates_change_synthese" trigger'
 ALTER TABLE synthese ENABLE TRIGGER tri_meta_dates_change_synthese ;
-
-
-\echo '-------------------------------------------------------------------------------'
-\echo 'Maintenance on "synthese"'
-VACUUM FULL VERBOSE synthese ;
-ANALYSE VERBOSE synthese ;
 
 
 \echo '-------------------------------------------------------------------------------'
@@ -412,15 +425,15 @@ ANALYSE VERBOSE synthese ;
 CREATE INDEX i_synthese_altitude_max ON synthese USING btree (altitude_max) ;
 CREATE INDEX i_synthese_altitude_min ON synthese USING btree (altitude_min) ;
 CREATE INDEX i_synthese_cd_nom ON synthese USING btree (cd_nom) ;
-CREATE INDEX i_synthese_cd_nom ON synthese USING btree (cd_nom) ;
 CREATE INDEX i_synthese_date_min ON synthese USING btree (date_min DESC) ;
+CREATE INDEX i_synthese_date_max ON synthese USING btree (date_max DESC) ;
 CREATE INDEX i_synthese_id_dataset ON synthese USING btree (id_dataset) ;
 CREATE INDEX i_synthese_t_sources ON synthese USING btree (id_source) ;
 CREATE INDEX i_synthese_the_geom_4326 ON synthese USING gist (the_geom_4326) ;
 CREATE INDEX i_synthese_the_geom_local ON synthese USING gist (the_geom_local) ;
 CREATE INDEX i_synthese_the_geom_point ON synthese USING gist (the_geom_point) ;
-CREATE UNIQUE INDEX pk_synthese ON synthese USING btree (id_synthese) ;
-CREATE UNIQUE INDEX unique_id_sinp_unique ON synthese USING btree (unique_id_sinp) ;
+CREATE UNIQUE INDEX IF NOT EXISTS pk_synthese ON synthese USING btree (id_synthese) ;
+CREATE UNIQUE INDEX IF NOT EXISTS unique_id_sinp_unique ON synthese USING btree (unique_id_sinp) ;
 
 
 \echo '-------------------------------------------------------------------------------'
@@ -444,13 +457,6 @@ ALTER TABLE synthese ENABLE TRIGGER tri_insert_cor_area_synthese ;
 
 
 \echo '-------------------------------------------------------------------------------'
-\echo 'Maintenance on "cor_area_synthese"'
-VACUUM FULL VERBOSE cor_area_synthese ;
-ANALYSE VERBOSE cor_area_synthese ;
-REINDEX TABLE cor_area_synthese ;
-
-
-\echo '-------------------------------------------------------------------------------'
 \echo 'Replay actions on table "cor_area_taxon" (tri_update_cor_area_taxon_update_cd_nom & tri_maj_cor_area_taxon)'
 
 \echo ' Clean table cor_area_taxon'
@@ -467,13 +473,6 @@ INSERT INTO gn_synthese.cor_area_taxon (id_area, cd_nom, last_date, nb_obs)
 \echo ' Enable "tri_maj_cor_area_taxon" & "tri_update_cor_area_taxon_update_cd_nom" triggers'
 ALTER TABLE cor_area_synthese ENABLE TRIGGER tri_maj_cor_area_taxon ;
 ALTER TABLE synthese ENABLE TRIGGER tri_update_cor_area_taxon_update_cd_nom ;
-
-
-\echo '-------------------------------------------------------------------------------'
-\echo 'Maintenance on "cor_area_synthese"'
-VACUUM FULL VERBOSE cor_area_taxon ;
-ANALYSE VERBOSE cor_area_taxon ;
-REINDEX TABLE cor_area_taxon ;
 
 
 \echo '-------------------------------------------------------------------------------'

@@ -68,61 +68,78 @@ function main() {
     # Start script
     printInfo "Install CEN-PACA test dataset script started at: ${fmt_time_start}"
 
+    #+----------------------------------------------------------------------------------------------------------+
     printMsg "Downloading CEN-PACA test data 2020-02-13 archive..."
-    local archive_filename="${cp_data_filename}.tar.bz2"
-    if [[ ! -f "${raw_dir}/${archive_filename}" ]]; then
-        rm -f "${raw_dir}/${archive_filename}"
+    if [[ ! -f "${raw_dir}/${cp_filename_archive}" ]]; then
+        rm -f "${raw_dir}/${cp_filename_archive}"
         curl -X POST https://content.dropboxapi.com/2/files/download \
             --header "Authorization: Bearer ${cp_dropbox_token}" \
-            --header "Dropbox-API-Arg: {\"path\": \"${cp_dropbox_dir}/${archive_filename}\"}" \
-            > "${raw_dir}/${archive_filename}"
+            --header "Dropbox-API-Arg: {\"path\": \"${cp_dropbox_dir}/${cp_filename_archive}\"}" \
+            > "${raw_dir}/${cp_filename_archive}"
      else
-        printVerbose "Archive file \"${archive_filename}\" already downloaded." ${Gra}
+        printVerbose "Archive file \"${cp_filename_archive}\" already downloaded." ${Gra}
     fi
 
-
-    printMsg "Extracting import data SQL file..."
-    local sql_filename="${cp_data_filename}.sql"
-    if [[ -f "${raw_dir}/${archive_filename}" ]]; then
-        if [[ ! -f "${raw_dir}/${sql_filename}" ]]; then
+    #+----------------------------------------------------------------------------------------------------------+
+    printMsg "Extracting import data CSV files..."
+    if [[ -f "${raw_dir}/${cp_filename_archive}" ]]; then
+        if [[ ! -f "${raw_dir}/${cp_filename_synthese}" ]]; then
             cd "${raw_dir}/"
-            tar jxvf "${raw_dir}/${archive_filename}"
+            tar jxvf "${raw_dir}/${cp_filename_archive}"
         else
-            printVerbose "SQL file \"${sql_filename}\" already extracted." ${Gra}
+            printVerbose "CSV files already extracted." ${Gra}
         fi
     fi
 
-
-    # printMsg "Executing import data SQL file..."
-    # export PGPASSWORD="${db_pass}"; \
-    #     psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-    #         -f "${raw_dir}/${sql_filename}"
-
-
+    #+----------------------------------------------------------------------------------------------------------+
+    # TODO: instead of sql file use import-parser with several CSV files
     printMsg "Inserting metadata into GeoNature database..."
     export PGPASSWORD="${db_pass}"; \
         psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -f "${sql_dir}/001_initialize_meta.sql"
+            -f "${sql_dir}/initial/001_initialize_meta.sql"
 
+    #+----------------------------------------------------------------------------------------------------------+
+    local csv_to_import="${cp_filename_source%.csv}_rti.csv"
 
     printMsg "Parsing SOURCE CSV file..."
-    cd "${root_dir}/import-parser/"
-    pipenv run python ./bin/gn_import_parser.py --type "so" "${raw_dir}/2020-02-13_cen-paca_source.sample.csv"
+    if [[ ! -f "${raw_dir}/${csv_to_import}" ]]; then
+        cd "${root_dir}/import-parser/"
+        pipenv run python ./bin/gn_import_parser.py --type "so" "${raw_dir}/${cp_filename_source}"
+    else
+        printVerbose "SOURCE CSV file already parsed." ${Gra}
+    fi
 
-    printMsg "Inserting sources into GeoNature database..."
-    local csv_filename="2020-02-13_cen-paca_source.sample_rti.csv"
+    printMsg "Inserting sources data into GeoNature database..."
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
-            -v csvFilePath="${raw_dir}/${csv_filename}" \
-            -f "${sql_dir}/002_import_source.sql"
+            -v csvFilePath="${raw_dir}/${csv_to_import}" \
+            -f "${sql_dir}/initial/002_copy_source.sql"
 
 
-    # printMsg "Transfering data from temporary import table to GeoNature synthese..."
-    # local csv_filename="${cp_data_filename}.csv"
-    # sudo -n -u "${pg_admin_name}" -s \
-    #     psql -d "${db_name}" \
-    #         -v csvFilePath="${raw_dir}/${csv_filename}" \
-    #         -f "${sql_dir}/002_copy_data.sql"
+    #+----------------------------------------------------------------------------------------------------------+
+    local csv_to_import="${cp_filename_synthese%.csv}_rti.csv"
+
+    printMsg "Parsing SYNTHESE CSV file..."
+    if [[ ! -f "${raw_dir}/${csv_to_import}" ]]; then
+        cd "${root_dir}/import-parser/"
+        pipenv run python ./bin/gn_import_parser.py --type "s" "${raw_dir}/${cp_filename_synthese}"
+    else
+        printVerbose "SYNTHESE CSV file already parsed." ${Gra}
+    fi
+
+    printMsg "Inserting synthese data into GeoNature database..."
+    sudo -n -u "${pg_admin_name}" -s \
+        psql -d "${db_name}" \
+            -v csvFilePath="${raw_dir}/${csv_to_import}" \
+            -f "${sql_dir}/initial/003_copy_synthese.sql"
+
+
+    #+----------------------------------------------------------------------------------------------------------+
+    printMsg "Executing database maintenance on updated tables..."
+    sudo -n -u "${pg_admin_name}" -s \
+        psql -d "${db_name}" \
+            -f "${sql_dir}/initial/004_maintenance.sql"
+
 
     #+----------------------------------------------------------------------------------------------------------+
     displayTimeElapsed
