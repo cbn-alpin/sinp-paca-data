@@ -1,1 +1,0 @@
--- This file was not used anymore because the 'area/import.sh' script  is used instead

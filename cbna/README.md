@@ -5,14 +5,17 @@
 * Au prélable, créer localement une base de données GeoNature à l'aide du script `install_db.sh` de GeoNature.
 * Copier/coller le fichier `shared/settings.example.ini` en le renomant `shared/settings.ini`.
     * Modifier dans ce fichier les paramètres de connexion à votre base de données GeoNature.
-* Placer dans le dossier `cbna/data/raw/` le fichier `releve_flore_global.bak` contenant le dump de la table `cbna_flore_global.releve_flore_global` de la base de données Flore du CBNA.
-* Utiliser le script `import.sh` pour importer le jeu de données de test du CBNA.
-    * Les scripts SQL du dossier `cbna/data/sql/` vont être exécuté séquentiellement.
+* Copier/coller le fichier `config/settings.sample.ini` en le renomant `config/settings.ini`.
+    * Modifier dans ce fichier les paramètres déjà présent s'ils ne correspondent pas à vos besoins. Si nécessaire, vous pouvez aussi y surcharger des paramètres du fichier  `config/settings.default.ini`.
+* Utiliser le script `bin/import_initial.sh` pour importer le jeu de données du CBNA.
+    * La sauvegarde (fichier .bak) de la flore globale du CBNA sera téléchargée depuis Dropbox.
+    * La sauvegarde sera restoré pour servir de base à l'import.
+    * Les scripts SQL du dossier `cbna/data/sql/initial/` vont être exécuté séquentiellement pour réaliser l'import.
 
 ## Synchronisation serveur
 
 Pour transférer les données sur le serveur, utiliser `rsync` en testant avec l'option `--dry-run` (à supprimer quand tout est ok):
 
 ```
-rsync -avL --exclude logs --exclude .gitignore --exclude settings.ini --exclude data/raw ./ admin@db-paca-sinp:/home/admin/data/cbna/ --dry-run
+rsync -avL --exclude var --exclude .gitignore --exclude settings.ini --exclude data/raw ./ admin@db-paca-sinp:/home/admin/data/cbna/ --dry-run
 ```
