@@ -17,6 +17,8 @@ Usage: ./$(basename $BASH_SOURCE)[options]
      -v | --verbose: display more infos
      -x | --debug: display debug script infos
      -c | --config: path to config file to use (default : config/settings.ini)
+     -i | --id: numeric id of french region to import as SINP area. Ex.: 93 for "PACA region (South of France)"
+     -o | --remove-outside_areas: remove areas outside of SINP area if set to "true". Do nothing if "false". Default: "true".
 EOF
     exit 0
 }
@@ -33,17 +35,21 @@ function parseScriptOptions() {
             "--verbose") set -- "${@}" "-v" ;;
             "--debug") set -- "${@}" "-x" ;;
             "--config") set -- "${@}" "-c" ;;
+            "--id") set -- "${@}" "-i" ;;
+            "--remove-outside_areas") set -- "${@}" "-o" ;;
             "--"*) exitScript "ERROR : parameter '${arg}' invalid ! Use -h option to know more." 1 ;;
             *) set -- "${@}" "${arg}"
         esac
     done
 
-    while getopts "hvxc:" option; do
+    while getopts "hvxc:i:o:" option; do
         case "${option}" in
             "h") printScriptUsage ;;
             "v") readonly verbose=true ;;
             "x") readonly debug=true; set -x ;;
             "c") setting_file_path="${OPTARG}" ;;
+            "i") readonly opt_sinp_area_id="${OPTARG}" ;;
+            "o") readonly opt_area_remove_outside_areas="${OPTARG}" ;;
             *) exitScript "ERROR : parameter invalid ! Use -h option to know more." 1 ;;
         esac
     done
@@ -65,10 +71,14 @@ function main() {
     redirectOutput "${area_log_imports}"
     checkSuperuser
 
+    # Check commands exist on system
     local readonly commands=("wget" "p7zip" "shp2pgsql" "psql")
     checkBinary "${commands[@]}"
 
-    echo "Restore jobs: ${pg_restore_jobs}"
+    # Override "area_sinp_region_id" value with command line option value if not empty
+    area_sinp_region_id=${opt_sinp_area_id:-$area_sinp_region_id}
+    # Override "area_remove_outside_areas" value with command line options value if not empty
+    area_remove_outside_areas=${opt_area_remove_outside_areas:-$area_remove_outside_areas}
 
     #+----------------------------------------------------------------------------------------------------------+
     # Start script
@@ -80,6 +90,7 @@ function main() {
     removeAreasOutsideSinpArea
 
     #+----------------------------------------------------------------------------------------------------------+
+    # Display script execution infos
     displayTimeElapsed
 }
 
@@ -119,6 +130,7 @@ function createFrenchAdminRegionAreasSqlFile() {
 
 function loadSinpArea() {
     printMsg "Loading SINP area in database '${area_table_name}'..."
+
     if [[ "${area_load_sinp_area}" = true ]]; then
         sudo -n -u "${pg_admin_name}" -s \
             psql -d "${db_name}" \
