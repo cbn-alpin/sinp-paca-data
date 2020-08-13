@@ -153,11 +153,21 @@ function insertSynthese() {
         printVerbose "SYNTHESE CSV file already parsed." ${Gra}
     fi
 
+    printMsg "Preparing GeoNature database before insert into syntese table ..."
+    sudo -n -u "${pg_admin_name}" -s \
+        psql -d "${db_name}" \
+            -f "${sql_shared_dir}/synthese_before_insert.sql"
+
     printMsg "Inserting synthese data into GeoNature database..."
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
             -v csvFilePath="${raw_dir}/${csv_to_import}" \
             -f "${sql_dir}/initial/003_copy_synthese.sql"
+
+    printMsg "Restoring GeoNature database after insert into syntese table ..."
+    sudo -n -u "${pg_admin_name}" -s \
+        psql -d "${db_name}" \
+            -f "${sql_shared_dir}/synthese_after_insert.sql"
 }
 
 function maintainDb() {

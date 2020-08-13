@@ -8,10 +8,22 @@ BEGIN;
 SET client_encoding = 'UTF8';
 SET search_path = gn_synthese;
 
--- TODO: replace this by import via table in schema "imports"
+
 \echo '-------------------------------------------------------------------------------'
-\echo 'Copy CVS file to t_sources'
-COPY t_sources (
+\echo 'Remove "temp_sources" table if already exists'
+DROP TABLE IF EXISTS temp_sources ;
+
+
+\echo '-------------------------------------------------------------------------------'
+\echo 'Create "temp_sources" table from "t_sources"'
+CREATE TABLE temp_sources AS
+TABLE t_sources
+WITH NO DATA ;
+
+
+\echo '-------------------------------------------------------------------------------'
+\echo 'Copy CVS file to temp_sources'
+COPY temp_sources (
     name_source,
     desc_source,
     entity_source_pk_field,
@@ -21,6 +33,31 @@ COPY t_sources (
 )
 FROM :'csvFilePath'
 WITH DELIMITER E'\t' CSV HEADER NULL '\N' ;
+
+
+\echo '-------------------------------------------------------------------------------'
+\echo 'Copy "temp_sources" data to "t_sources" if not exist'
+INSERT INTO t_sources(
+    name_source,
+    desc_source,
+    entity_source_pk_field,
+    url_source,
+    meta_create_date,
+    meta_update_date
+)
+SELECT
+    name_source,
+    desc_source,
+    entity_source_pk_field,
+    url_source,
+    meta_create_date,
+    meta_update_date
+FROM temp_sources AS tmp
+WHERE NOT EXISTS (
+    SELECT 'X'
+    FROM t_sources AS ts
+    WHERE ts.name_source != tmp.name_source
+) ;
 
 
 \echo '----------------------------------------------------------------------------'
