@@ -5,3 +5,4 @@ var/
 logs/
 settings.ini
 *.log
+*.tmp.sql
