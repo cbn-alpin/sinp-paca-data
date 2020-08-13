@@ -28,6 +28,9 @@ DROP INDEX ref_geo.index_l_areas_centroid ;
 
 \echo '----------------------------------------------------------------------------'
 \echo 'Delete areas not intersect with SINP area'
+-- TODO: to improve performance :
+-- 1. Use st_subdivide() with territory
+-- 2. try to build a new l_areas table instead of deleting rows in existing table
 DELETE FROM ref_geo.l_areas AS a
 USING ref_geo.region_tmp AS c
 WHERE public.st_intersects(c.geom, a.geom) = false
