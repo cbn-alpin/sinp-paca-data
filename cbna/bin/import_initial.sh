@@ -171,17 +171,19 @@ function addMetaData() {
 function prepareDbBeforeSyntheseInserting() {
     printMsg "Preparing database before insert into syntese table ..."
 
+    checkSuperuser
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
-            -f "${sql_dir}/initial/006_synthese_before_insert.sql"
+            -f "${sql_shared_dir}/synthese_before_insert.sql"
 }
 
 function importSyntheseData() {
     printMsg "Importing CBNA data into synthese ..."
-    local readonly tmp_sql_file="${sql_dir}/initial/007_synthese_insert.tmp.sql"
+    local readonly sql_file="${sql_dir}/initial/006_synthese_insert.sql"
+    local readonly tmp_sql_file="${sql_dir}/initial/006_synthese_insert.tmp.sql"
 
     printVerbose "Copy SQL script"
-    cp "${sql_dir}/initial/007_synthese_insert.sql" "${tmp_sql_file}"
+    cp "${sql_file}" "${tmp_sql_file}"
 
     printVerbose "Replace variables in PGPSQL script"
     sed -e "s/^\(.*\){{importSchema}}\(.*\)$/\1${cbna_schema_import}\2/" \
@@ -197,17 +199,20 @@ function importSyntheseData() {
 
 function cleanDbAfterSyntheseInserting() {
     printMsg "Restoring database after insert into syntese table ..."
+
+    checkSuperuser
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
-            -f "${sql_dir}/initial/008_synthese_after_insert.sql"
+            -f "${sql_shared_dir}/synthese_after_insert.sql"
 }
 
 function maintainDb() {
     printMsg "Executing maintenance operations ..."
 
+    checkSuperuser
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
-            -f "${sql_dir}/initial/009_maintenance.sql"
+            -f "${sql_dir}/initial/007_maintenance.sql"
 }
 
 main "${@}"

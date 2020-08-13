@@ -1,5 +1,6 @@
 # Tâches à faire
-- [x] Afin d'augmenter la vitesse d'import, préparer un [fichier CSV au format SYNTHESE SINP](https://wiki-sinp.cbn-alpin.fr/database/import-formats#format_synthese_d_import) et modifier la mécanique d'import
+- [ ] Afin d'utiliser la même mécanique d'import, préparer un [fichier CSV au format SYNTHESE SINP](https://wiki-sinp.cbn-alpin.fr/database/import-formats#format_synthese_d_import) et modifier l'import
+- [ ] La récréation de la table cor_area_synthese est trop longue après un import. Essayer d'utiliser st_subdivide() ? Ne pas tronquer la table, seulement la mettre à jour avec les nouvelles données ?
 
 # Tâches réalisée
 - [x] Utiliser le nouveau format de script Bash
