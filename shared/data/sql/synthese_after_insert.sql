@@ -1,14 +1,13 @@
 \echo 'Restore database after insert into synthese'
 \echo 'Rights: superuser'
-\echo 'GeoNature database compatibility : v2.4.1'
+\echo 'GeoNature database compatibility : v2.3.0+'
 BEGIN;
 
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Defines variables'
-SET client_encoding = 'UTF8';
-SET search_path = gn_synthese, public, pg_catalog;
-
+SET client_encoding = 'UTF8' ;
+SET search_path = gn_synthese, public, pg_catalog ;
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Update "synthese_id_synthese_seq" sequence'
@@ -16,12 +15,38 @@ SELECT SETVAL('synthese_id_synthese_seq', (SELECT MAX(id_synthese) FROM synthese
 
 
 \echo '-------------------------------------------------------------------------------'
+\echo 'For GeoNature v2.4.1+ add constraints on "synthese.id_area_attachment" column'
+DO $$
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_name='synthese' and column_name='id_area_attachment'
+        ) IS TRUE THEN
+            RAISE NOTICE ' Add "fk_synthese_id_area_attachment"' ;
+            ALTER TABLE synthese ADD CONSTRAINT fk_synthese_id_area_attachment
+                FOREIGN KEY (id_area_attachment) REFERENCES ref_geo.l_areas(id_area)
+                ON UPDATE CASCADE ;
+
+            RAISE NOTICE ' Add "check_synthese_info_geo_type_id_area_attachment"' ;
+            ALTER TABLE synthese ADD CONSTRAINT check_synthese_info_geo_type_id_area_attachment
+                CHECK (
+                    NOT (
+                        ((ref_nomenclatures.get_cd_nomenclature(id_nomenclature_info_geo_type))::text = '2'::text)
+                        AND
+                        (id_area_attachment IS NULL)
+                    )
+                ) NOT VALID ;
+        ELSE
+      		RAISE NOTICE ' GeoNature < v2.4.1 => column "synthese.id_area_attachment" not exists !' ;
+        END IF ;
+    END
+$$ ;
+
+\echo '-------------------------------------------------------------------------------'
 \echo 'Restore foreign keys constraints on synthese'
 ALTER TABLE synthese ADD CONSTRAINT fk_synthese_cd_nom
     FOREIGN KEY (cd_nom) REFERENCES taxonomie.taxref(cd_nom)
-    ON UPDATE CASCADE ;
-ALTER TABLE synthese ADD CONSTRAINT fk_synthese_id_area_attachment
-    FOREIGN KEY (id_area_attachment) REFERENCES ref_geo.l_areas(id_area)
     ON UPDATE CASCADE ;
 ALTER TABLE synthese ADD CONSTRAINT fk_synthese_id_dataset
     FOREIGN KEY (id_dataset) REFERENCES gn_meta.t_datasets(id_dataset)
@@ -142,14 +167,6 @@ ALTER TABLE synthese ADD CONSTRAINT check_synthese_geo_object_nature
         ref_nomenclatures.check_nomenclature_type_by_mnemonique(
             id_nomenclature_geo_object_nature,
             'NAT_OBJ_GEO'::character varying
-        )
-    ) NOT VALID ;
-ALTER TABLE synthese ADD CONSTRAINT check_synthese_info_geo_type_id_area_attachment
-    CHECK (
-        NOT (
-            ((ref_nomenclatures.get_cd_nomenclature(id_nomenclature_info_geo_type))::text = '2'::text)
-            AND
-            (id_area_attachment IS NULL)
         )
     ) NOT VALID ;
 ALTER TABLE synthese ADD CONSTRAINT check_synthese_life_stage
@@ -288,6 +305,56 @@ BEGIN;
 
 
 \echo '-------------------------------------------------------------------------------'
+\echo 'For GeoNature v2.3.2 and below handle table "gn_synthese.taxons_synthese_autocomplete"'
+DO $$
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.tables
+            WHERE table_schema = 'gn_synthese'
+                AND table_name = 'taxons_synthese_autocomplete'
+        ) IS TRUE THEN
+            RAISE NOTICE ' Replay actions on table "synthese" (trg_refresh_taxons_forautocomplete)' ;
+
+            RAISE NOTICE '  Clean table taxons_synthese_autocomplete' ;
+            TRUNCATE TABLE gn_synthese.taxons_synthese_autocomplete;
+
+            RAISE NOTICE '  Reinsert scientific names in table taxons_synthese_autocomplete' ;
+            INSERT INTO gn_synthese.taxons_synthese_autocomplete
+                SELECT DISTINCT
+                    t.cd_nom,
+                    t.cd_ref,
+                    CONCAT(t.lb_nom, ' = <i>', t.nom_valide, '</i>', ' - [', t.id_rang, ' - ', t.cd_nom , ']') AS search_name,
+                    t.nom_valide,
+                    t.lb_nom,
+                    t.regne,
+                    t.group2_inpn
+                FROM gn_synthese.synthese s
+                    JOIN taxonomie.taxref t
+                        ON (t.cd_nom = s.cd_nom) ;
+
+            RAISE NOTICE '  Reinsert vernacular names in table taxons_synthese_autocomplete' ;
+            INSERT INTO gn_synthese.taxons_synthese_autocomplete
+                SELECT DISTINCT
+                    t.cd_nom,
+                    t.cd_ref,
+                    CONCAT(t.nom_vern, ' =  <i> ', t.nom_valide, '</i>', ' - [', t.id_rang, ' - ', t.cd_nom , ']' ) AS search_name,
+                    t.nom_valide,
+                    t.lb_nom,
+                    t.regne,
+                    t.group2_inpn
+                FROM gn_synthese.synthese s
+                    JOIN taxonomie.taxref t
+                        ON (t.cd_nom = s.cd_nom AND t.cd_nom = t.cd_ref)
+                WHERE t.nom_vern IS NOT NULL ;
+        ELSE
+      		RAISE NOTICE ' GeoNature > v2.3.2 => table "gn_synthese.taxons_synthese_autocomplete" not exists !' ;
+        END IF ;
+    END
+$$ ;
+
+
+\echo '-------------------------------------------------------------------------------'
 \echo 'Replay actions on table "synthese" (tri_meta_dates_change_synthese)'
 
 \echo ' Update meta dates on "synthese"'
@@ -362,6 +429,24 @@ ALTER TABLE synthese ENABLE TRIGGER tri_insert_cor_area_synthese ;
 \echo ' Enable "tri_update_cor_area_taxon_update_cd_nom" trigger'
 ALTER TABLE synthese ENABLE TRIGGER tri_update_cor_area_taxon_update_cd_nom ;
 
+
+\echo '-------------------------------------------------------------------------------'
+\echo 'For GeoNature v2.3.2 and below handle table "gn_synthese.taxons_synthese_autocomplete"'
+DO $$
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.tables
+            WHERE table_schema = 'gn_synthese'
+                AND table_name = 'taxons_synthese_autocomplete'
+        ) THEN
+            RAISE NOTICE ' Enable synthese trigger "trg_refresh_taxons_forautocomplete"' ;
+            ALTER TABLE synthese ENABLE TRIGGER trg_refresh_taxons_forautocomplete ;
+        ELSE
+      		RAISE NOTICE ' GeoNature > v2.3.2 => table "gn_synthese.taxons_synthese_autocomplete" not exists !' ;
+        END IF ;
+    END
+$$ ;
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'COMMIT if all is ok:'

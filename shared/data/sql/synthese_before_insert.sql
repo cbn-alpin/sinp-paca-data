@@ -1,6 +1,6 @@
 \echo 'Prepare database before insert into synthese'
 \echo 'Rights: superuser'
-\echo 'GeoNature database compatibility : v2.4.1'
+\echo 'GeoNature database compatibility : v2.3.0+'
 BEGIN;
 
 
@@ -120,6 +120,25 @@ ALTER TABLE cor_area_synthese DISABLE TRIGGER tri_maj_cor_area_taxon ;
 ALTER TABLE synthese DISABLE TRIGGER tri_update_cor_area_taxon_update_cd_nom ;
 ALTER TABLE synthese DISABLE TRIGGER tri_meta_dates_change_synthese ;
 ALTER TABLE synthese DISABLE TRIGGER tri_insert_cor_area_synthese ;
+
+
+\echo '-------------------------------------------------------------------------------'
+\echo 'For GeoNature v2.3.2 and below handle table "gn_synthese.taxons_synthese_autocomplete"'
+DO $$
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.tables
+            WHERE table_schema = 'gn_synthese'
+                AND table_name = 'taxons_synthese_autocomplete'
+        ) THEN
+            RAISE NOTICE ' Disable synthese trigger "trg_refresh_taxons_forautocomplete"' ;
+            ALTER TABLE synthese DISABLE TRIGGER trg_refresh_taxons_forautocomplete ;
+        ELSE
+      		RAISE NOTICE ' GeoNature > v2.3.2 => table "gn_synthese.taxons_synthese_autocomplete" not present !' ;
+        END IF ;
+    END
+$$ ;
 
 
 \echo '-------------------------------------------------------------------------------'
