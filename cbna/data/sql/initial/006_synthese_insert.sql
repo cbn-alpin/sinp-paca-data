@@ -1,6 +1,6 @@
 \echo 'Insert CBNA data into synthese'
 \echo 'Rights: superuser'
-\echo 'GeoNature database compatibility : v2.4.1'
+\echo 'GeoNature database compatibility : v2.3.0+'
 -- This script need to replace {{variable}} by an external script
 
 \echo '-------------------------------------------------------------------------------'
@@ -12,6 +12,21 @@ DECLARE
     stopAt INTEGER := 7500000 ;
     offsetCnt INTEGER := 0 ;
 BEGIN
+    RAISE NOTICE ' Remove table with "cd_nom" from import table not in TaxRef' ;
+    DROP TABLE IF EXISTS {{importSchema}}.tmp_{{importTable}}_out_of_taxref ;
+
+    RAISE NOTICE ' Create temp table with "cd_nom" from import table not in TaxRef' ;
+    CREATE TABLE {{importSchema}}.tmp_{{importTable}}_out_of_taxref AS (
+        SELECT DISTINCT i.taxref_cd_nom AS cd_nom
+        FROM {{importSchema}}.{{importTable}} AS i
+        WHERE NOT EXISTS (
+            SELECT 'X'
+            FROM taxonomie.taxref AS t
+            WHERE t.cd_nom = i.taxref_cd_nom
+        )
+    ) ;
+
+    RAISE NOTICE ' Start to loop on data to import in synthese table' ;
     WHILE offsetCnt < stopAt LOOP
         INSERT INTO gn_synthese.synthese(
             id_synthese,
@@ -199,7 +214,9 @@ BEGIN
                 AND (
                     a.taxref_cd_nom < 1000000
                     AND a.taxref_cd_nom > 0
-                    AND a.taxref_cd_nom NOT IN (47565, 104306, 105772, 116744, 132062, 134102, 141108, 159484, 159572, 434118, 888838, 892200, 892221)
+                    AND a.taxref_cd_nom NOT IN (
+                        SELECT cd_nom FROM {{importSchema}}.tmp_{{importTable}}_out_of_taxref
+                    )
                 )
                 AND (a.idreleve_flore_global NOT IN (5989093))
             ORDER BY entity_source_pk_value ASC

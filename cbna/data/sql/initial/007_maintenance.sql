@@ -1,6 +1,6 @@
 \echo 'Maintenance on gn_synthese tables after massive insert into synthese'
 \echo 'Rights: superuser'
-\echo 'GeoNature database compatibility : v2.4.1'
+\echo 'GeoNature database compatibility : v2.3.0+'
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Maintenance on "synthese"'
