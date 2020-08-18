@@ -171,6 +171,11 @@ function addMetaData() {
 function prepareDbBeforeSyntheseInserting() {
     printMsg "Preparing database before insert into syntese table ..."
 
+    printVerbose "Remove if necessary previous data from synthese"
+    export PGPASSWORD="${db_pass}"; \
+        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
+            -f "${sql_dir}/initial/006_synthese_clean.sql"
+
     checkSuperuser
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
@@ -179,8 +184,8 @@ function prepareDbBeforeSyntheseInserting() {
 
 function importSyntheseData() {
     printMsg "Importing CBNA data into synthese ..."
-    local readonly sql_file="${sql_dir}/initial/006_synthese_insert.sql"
-    local readonly tmp_sql_file="${sql_dir}/initial/006_synthese_insert.tmp.sql"
+    local readonly sql_file="${sql_dir}/initial/007_synthese_insert.sql"
+    local readonly tmp_sql_file="${sql_dir}/initial/007_synthese_insert.tmp.sql"
 
     printVerbose "Copy SQL script"
     cp "${sql_file}" "${tmp_sql_file}"
@@ -207,12 +212,12 @@ function cleanDbAfterSyntheseInserting() {
 }
 
 function maintainDb() {
-    printMsg "Executing maintenance operations ..."
+    printMsg "Executing maintenance operations on synthese table ..."
 
     checkSuperuser
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
-            -f "${sql_dir}/initial/007_maintenance.sql"
+            -f "${sql_shared_dir}/synthese_after_insert.sql"
 }
 
 main "${@}"

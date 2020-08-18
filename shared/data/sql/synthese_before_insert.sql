@@ -9,13 +9,6 @@ BEGIN;
 SET client_encoding = 'UTF8' ;
 SET search_path = gn_synthese, public, pg_catalog ;
 
-
-\echo '-------------------------------------------------------------------------------'
-\echo 'Delete previous data from same source'
-DELETE FROM gn_synthese.synthese
-WHERE id_source = gn_synthese.get_id_source('CBNA_EXPORT') ;
-
-
 \echo '-------------------------------------------------------------------------------'
 \echo 'Update "synthese_id_synthese_seq" sequence'
 SELECT SETVAL('synthese_id_synthese_seq', (SELECT MAX(id_synthese) FROM gn_synthese.synthese)) ;
