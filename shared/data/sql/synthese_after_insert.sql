@@ -281,7 +281,7 @@ ALTER TABLE synthese ADD CONSTRAINT unique_id_sinp_unique
 
 
 \echo '-------------------------------------------------------------------------------'
-\echo 'Restore indexes on "synthese" AFTER maintenance (vacuum) and BEFORE others triggers actions'
+\echo 'Restore indexes on "synthese" BEFORE others triggers actions'
 CREATE INDEX IF NOT EXISTS i_synthese_altitude_max ON synthese USING btree(altitude_max) ;
 CREATE INDEX IF NOT EXISTS i_synthese_altitude_min ON synthese USING btree(altitude_min) ;
 CREATE INDEX IF NOT EXISTS i_synthese_cd_nom ON synthese USING btree(cd_nom) ;
