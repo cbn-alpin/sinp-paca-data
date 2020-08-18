@@ -22,6 +22,11 @@ WITH NO DATA ;
 
 
 \echo '-------------------------------------------------------------------------------'
+\echo 'Attribute "temp_sources" to GeoNature DB owner'
+ALTER TABLE temp_sources OWNER TO :gnDbOwner ;
+
+
+\echo '-------------------------------------------------------------------------------'
 \echo 'Copy CVS file to temp_sources'
 COPY temp_sources (
     name_source,
@@ -32,7 +37,7 @@ COPY temp_sources (
     meta_update_date
 )
 FROM :'csvFilePath'
-WITH DELIMITER E'\t' CSV HEADER NULL '\N' ;
+WITH CSV HEADER DELIMITER E'\t' NULL '\N' ;
 
 
 \echo '-------------------------------------------------------------------------------'
@@ -56,8 +61,29 @@ FROM temp_sources AS tmp
 WHERE NOT EXISTS (
     SELECT 'X'
     FROM t_sources AS ts
-    WHERE ts.name_source != tmp.name_source
+    WHERE ts.name_source = tmp.name_source
 ) ;
+
+
+\echo '----------------------------------------------------------------------------'
+\echo 'Disable triggers on synthese before deleting previous data loaded'
+ALTER TABLE gn_synthese.synthese DISABLE TRIGGER trg_refresh_taxons_forautocomplete ;
+ALTER TABLE gn_synthese.synthese DISABLE TRIGGER tri_del_area_synt_maj_corarea_tax ;
+
+
+\echo '----------------------------------------------------------------------------'
+\echo 'Delete previous data loaded in synthese from this sources'
+DELETE FROM gn_synthese.synthese
+WHERE id_source IN (
+    SELECT gn_synthese.get_id_source(tmp.name_source)
+    FROM temp_sources AS tmp
+) ;
+
+
+\echo '----------------------------------------------------------------------------'
+\echo 'Enable triggers on synthese after deleting previous data loaded'
+ALTER TABLE gn_synthese.synthese ENABLE TRIGGER trg_refresh_taxons_forautocomplete ;
+ALTER TABLE gn_synthese.synthese ENABLE TRIGGER tri_del_area_synt_maj_corarea_tax ;
 
 
 \echo '----------------------------------------------------------------------------'

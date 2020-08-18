@@ -41,7 +41,7 @@ COPY synthese (
     last_action
 )
 FROM :'csvFilePath'
-WITH FORMAT CSV HEADER TRUE DELIMITER E'\t' NULL '\N' ;
+WITH CSV HEADER DELIMITER E'\t' NULL '\N' ;
 
 
 \echo '-------------------------------------------------------------------------------'

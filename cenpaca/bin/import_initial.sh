@@ -110,16 +110,7 @@ function addMetaData() {
     # TODO: instead of sql file use import-parser with several CSV files
     printMsg "Inserting metadata into GeoNature database..."
 
-    export PGPASSWORD="${db_pass}"; \    printMsg "Downloading CEN-PACA test data 2020-02-13 archive..."
-    if [[ ! -f "${raw_dir}/${cp_filename_archive}" ]]; then
-        curl -X POST https://content.dropboxapi.com/2/files/download \
-            --header "Authorization: Bearer ${cp_dropbox_token}" \
-            --header "Dropbox-API-Arg: {\"path\": \"${cp_dropbox_dir}/${cp_filename_archive}\"}" \
-            > "${raw_dir}/${cp_filename_archive}"
-     else
-        printVerbose "Archive file \"${cp_filename_archive}\" already downloaded." ${Gra}
-    fi
-
+    export PGPASSWORD="${db_pass}"; \
         psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
             -f "${sql_dir}/initial/001_initialize_meta.sql"
 }
@@ -136,8 +127,10 @@ function insertSource() {
     fi
 
     printMsg "Inserting sources data into GeoNature database..."
+    checkSuperuser
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
+            -v gnDbOwner="${db_user}" \
             -v csvFilePath="${raw_dir}/${csv_to_import}" \
             -f "${sql_dir}/initial/002_copy_source.sql"
 }
@@ -154,17 +147,20 @@ function insertSynthese() {
     fi
 
     printMsg "Preparing GeoNature database before insert into syntese table ..."
+    checkSuperuser
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
             -f "${sql_shared_dir}/synthese_before_insert.sql"
 
     printMsg "Inserting synthese data into GeoNature database..."
+    checkSuperuser
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
             -v csvFilePath="${raw_dir}/${csv_to_import}" \
             -f "${sql_dir}/initial/003_copy_synthese.sql"
 
     printMsg "Restoring GeoNature database after insert into syntese table ..."
+    checkSuperuser
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
             -f "${sql_shared_dir}/synthese_after_insert.sql"
@@ -173,9 +169,10 @@ function insertSynthese() {
 function maintainDb() {
     printMsg "Executing database maintenance on updated tables..."
 
+    checkSuperuser
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
-            -f "${sql_dir}/initial/004_maintenance.sql"
+            -f "${sql_shared_dir}/synthese_maintenance.sql"
 }
 
 main "${@}"
