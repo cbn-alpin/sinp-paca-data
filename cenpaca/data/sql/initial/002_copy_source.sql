@@ -66,26 +66,5 @@ WHERE NOT EXISTS (
 
 
 \echo '----------------------------------------------------------------------------'
-\echo 'Disable triggers on synthese before deleting previous data loaded'
-ALTER TABLE gn_synthese.synthese DISABLE TRIGGER trg_refresh_taxons_forautocomplete ;
-ALTER TABLE gn_synthese.synthese DISABLE TRIGGER tri_del_area_synt_maj_corarea_tax ;
-
-
-\echo '----------------------------------------------------------------------------'
-\echo 'Delete previous data loaded in synthese from this sources'
-DELETE FROM gn_synthese.synthese
-WHERE id_source IN (
-    SELECT gn_synthese.get_id_source(tmp.name_source)
-    FROM temp_sources AS tmp
-) ;
-
-
-\echo '----------------------------------------------------------------------------'
-\echo 'Enable triggers on synthese after deleting previous data loaded'
-ALTER TABLE gn_synthese.synthese ENABLE TRIGGER trg_refresh_taxons_forautocomplete ;
-ALTER TABLE gn_synthese.synthese ENABLE TRIGGER tri_del_area_synt_maj_corarea_tax ;
-
-
-\echo '----------------------------------------------------------------------------'
 \echo 'COMMIT if all is ok:'
 COMMIT;

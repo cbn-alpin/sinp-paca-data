@@ -121,7 +121,10 @@ function insertSource() {
     printMsg "Parsing SOURCE CSV file..."
     if [[ ! -f "${raw_dir}/${csv_to_import}" ]]; then
         cd "${root_dir}/import-parser/"
-        pipenv run python ./bin/gn_import_parser.py --type "so" "${raw_dir}/${cp_filename_source}"
+        pipenv run python ./bin/gn_import_parser.py \
+            --type "so" \
+            --config "${conf_dir}/parser_actions.ini" \
+            "${raw_dir}/${cp_filename_source}"
     else
         printVerbose "SOURCE CSV file already parsed." ${Gra}
     fi
@@ -135,18 +138,38 @@ function insertSource() {
             -f "${sql_dir}/initial/002_copy_source.sql"
 }
 
+function prepareSynthese() {
+    printMsg "Preparing GeoNature database before deleting data into syntese table ..."
+    export PGPASSWORD="${db_pass}"; \
+        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
+            -f "${sql_shared_dir}/synthese_before_delete.sql"
+
+    printMsg "Deleting previously loaded synthese data with this sources..."
+    export PGPASSWORD="${db_pass}"; \
+        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
+            -f "${sql_dir}/initial/003_prepare_synthese.sql"
+
+    printMsg "Restoring GeoNature database after deleting data into syntese table ..."
+    export PGPASSWORD="${db_pass}"; \
+        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
+            -f "${sql_shared_dir}/synthese_after_delete.sql"
+}
+
 function insertSynthese() {
     local csv_to_import="${cp_filename_synthese%.csv}_rti.csv"
 
     printMsg "Parsing SYNTHESE CSV file..."
     if [[ ! -f "${raw_dir}/${csv_to_import}" ]]; then
         cd "${root_dir}/import-parser/"
-        pipenv run python ./bin/gn_import_parser.py --type "s" "${raw_dir}/${cp_filename_synthese}"
+        pipenv run python ./bin/gn_import_parser.py \
+            --type "s" \
+            --config "${conf_dir}/parser_actions.ini" \
+            "${raw_dir}/${cp_filename_synthese}"
     else
         printVerbose "SYNTHESE CSV file already parsed." ${Gra}
     fi
 
-    printMsg "Preparing GeoNature database before insert into syntese table ..."
+    printMsg "Preparing GeoNature database before inserting data into syntese table ..."
     checkSuperuser
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
@@ -157,9 +180,9 @@ function insertSynthese() {
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
             -v csvFilePath="${raw_dir}/${csv_to_import}" \
-            -f "${sql_dir}/initial/003_copy_synthese.sql"
+            -f "${sql_dir}/initial/004_copy_synthese.sql"
 
-    printMsg "Restoring GeoNature database after insert into syntese table ..."
+    printMsg "Restoring GeoNature database after inserting data into syntese table ..."
     checkSuperuser
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
