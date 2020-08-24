@@ -1,16 +1,12 @@
 import os
 import sys
 import re
+import uuid
 import configparser
 
-from helpers.helpers import print_msg, print_info, print_error, print_verbose, find_ranges
+from helpers.config import Config
+from helpers.helpers import print_msg, print_info, print_error, print_verbose, find_ranges, is_empty_or_null
 
-
-def get_nomenclatures_columns_types():
-    config = configparser.ConfigParser()
-    config_dir = os.environ['IMPORT_PARSER.PATHES.CONFIG']
-    config.read(f'{config_dir}/nomenclatures.ini')
-    return config['NOMENCLATURES']
 
 # Computing CSV file number of lines without header line
 def calculate_csv_entries_number(file_handle):
@@ -25,30 +21,42 @@ def calculate_csv_entries_number(file_handle):
     return total_lines
 
 # Remove row entries where fieldname match pattern
-def remove_headers(col_patterns, fieldnames):
+def remove_headers(fieldnames):
     output = fieldnames.copy()
-    for pattern in col_patterns:
-        for field in fieldnames:
-            if re.match(rf'^{pattern}$', field):
-                output.remove(field)
+    if Config.get('actions.remove_columns'):
+        col_patterns = Config.get('actions.remove_columns.params')
+        for pattern in col_patterns:
+            for field in fieldnames:
+                if re.match(rf'^{pattern}$', field):
+                    output.remove(field)
     return output
 
 
 # Remove row entries where fieldname match pattern
-def remove_columns(col_patterns, row):
-    fieldnames = list(row.keys())
-    for pattern in col_patterns:
-        for field in fieldnames:
-            if re.match(rf'^{pattern}$', field):
-                del row[field]
+def remove_columns(row):
+    if Config.get('actions.remove_columns'):
+        col_patterns = Config.get('actions.remove_columns.params')
+        fieldnames = list(row.keys())
+        for pattern in col_patterns:
+            for field in fieldnames:
+                if re.match(rf'^{pattern}$', field):
+                    del row[field]
     return row
 
-def insert_values_to_columns(col_values, row):
-    fieldnames = list(row.keys())
-    for pattern, value in col_values.items():
-        for field in fieldnames:
-            if re.match(rf'^{pattern}$', field):
-                row[field] = value
+def insert_values_to_columns(row):
+    if Config.get('actions.set_values'):
+        col_values =  Config.get('actions.set_values.params')
+        fieldnames = list(row.keys())
+        for pattern, value in col_values.items():
+            for field in fieldnames:
+                if re.match(rf'^{pattern}$', field):
+                    row[field] = value
+    return row
+
+def add_uuid_obs(row):
+    if Config.get('actions.add_uuid_obs'):
+        if is_empty_or_null(row['unique_id_sinp']):
+            row['unique_id_sinp'] = uuid.uuid4()
     return row
 
 def check_sciname_code(row, scinames_codes):
@@ -81,7 +89,8 @@ def replace_code_source(row, sources):
             row['code_source'] = id
     return row
 
-def replace_code_nomenclature(row, nomenclatures, columns_types):
+def replace_code_nomenclature(row, nomenclatures):
+    columns_types = Config.getSection('NOMENCLATURES')
     fieldnames = list(row.keys())
     for field in fieldnames:
         if field.startswith('code_nomenclature_'):

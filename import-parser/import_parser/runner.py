@@ -7,17 +7,20 @@ import datetime
 
 import click
 
+# Define OS Environment variables
+root_dir = os.path.realpath(f'{os.path.dirname(os.path.abspath(__file__))}/../../')
+config_shared_dir = os.path.realpath(f'{root_dir}/shared/config/')
+app_dir = os.path.realpath(f'{os.path.dirname(os.path.abspath(__file__))}/../')
+config_dir = os.path.realpath(f'{app_dir}/config/')
+os.environ['IMPORT_PARSER.PATHES.ROOT'] = root_dir
+os.environ['IMPORT_PARSER.PATHES.SHARED.CONFIG'] = config_shared_dir
+os.environ['IMPORT_PARSER.PATHES.APP'] = app_dir
+os.environ['IMPORT_PARSER.PATHES.APP.CONFIG'] = config_dir
 
 from gn2.db import GnDatabase
+from helpers.config import Config
 from helpers.helpers import print_msg, print_info, print_error, print_verbose, find_ranges
 from gn2.parser import *
-
-
-# Define OS Environment variables
-root_dir = os.path.realpath(f'{os.path.dirname(os.path.abspath(__file__))}/../')
-config_dir = os.path.realpath(f'{root_dir}/config/')
-os.environ['IMPORT_PARSER.PATHES.ROOT'] = root_dir
-os.environ['IMPORT_PARSER.PATHES.CONFIG'] = config_dir
 
 
 @click.command()
@@ -32,7 +35,14 @@ os.environ['IMPORT_PARSER.PATHES.CONFIG'] = config_dir
     default='s',
     help='Type of import file: s (=synthese), so =(source), d (=dataset), af (=acquisition_framework), o (=organism)',
 )
-def parse_file(filename, import_type):
+@click.option(
+    '-c',
+    '--config',
+    'actions_config_file',
+    default=f'{config_dir}/actions.default.ini',
+    help='Config file with actions to execute on CSV.',
+)
+def parse_file(filename, import_type, actions_config_file):
     """
     GeoNature 2 Import Parser
 
@@ -49,21 +59,13 @@ def parse_file(filename, import_type):
     Access to the GeoNature database must be configured in 'shared/config/settings.ini' file.
     """
     start_time = time.time()
+
     filename_src = click.format_filename(filename)
     filename_dest =  os.path.splitext(filename_src)[0] + '_rti.csv'
-    if import_type == 's' :
-        columns_to_remove = ['id_synthese', 'unique_id_.*', 'code_nomenclature_.*',]
-        columns_values_to_set = {
-            'code_source': 'CEN_PACA_EXPORT',
-            'code_module': 'SYNTHESE',
-            'code_dataset': 'DFCP',
-            'meta_v_taxref': '12',
-        }
-        nomenclatures_columns_types = get_nomenclatures_columns_types()
 
-    elif import_type == 'so':
-        columns_to_remove = ['id_source', 'meta_last_action',]
-        columns_values_to_set = {}
+    set_actions_type(import_type)
+    load_actions_config_file(actions_config_file)
+    load_nomenclatures()
 
     click.echo('Source filename:' + filename_src)
     click.echo('Destination filename:' + filename_dest)
@@ -79,7 +81,7 @@ def parse_file(filename, import_type):
         datasets = db.get_all_datasets()
         modules = db.get_all_modules()
         sources = db.get_all_sources()
-        nomenclatures = db.get_all_nomenclatures(nomenclatures_columns_types)
+        nomenclatures = db.get_all_nomenclatures()
         scinames_codes = db.get_all_scinames_codes()
 
     # Open CSV files
@@ -92,10 +94,9 @@ def parse_file(filename, import_type):
 
         reader = csv.DictReader(f_src, dialect='sql_copy')
         with open(filename_dest, 'w', newline='', encoding='utf-8') as f_dest:
-            fieldnames = remove_headers(columns_to_remove, reader.fieldnames)
+            fieldnames = remove_headers(reader.fieldnames)
             writer = csv.DictWriter(f_dest, dialect='sql_copy', fieldnames=fieldnames)
             writer.writeheader()
-
 
             with click.progressbar(length=int(total_csv_lines_nbr), label="Parsing lines") as pbar:
                 try:
@@ -104,12 +105,15 @@ def parse_file(filename, import_type):
                         write_row = True
 
                         # Remove useless columns
-                        row = remove_columns(columns_to_remove, row)
+                        row = remove_columns(row)
 
                         # Insert value in colums
-                        row = insert_values_to_columns(columns_values_to_set, row)
+                        row = insert_values_to_columns(row)
 
                         if import_type == 's' :
+                            # Add observation UUID
+                            row = add_uuid_obs(row)
+
                             # Check Sciname code
                             if check_sciname_code(row, scinames_codes) == False:
                                 write_row = False
@@ -126,11 +130,7 @@ def parse_file(filename, import_type):
                             # Replace Source Code
                             row = replace_code_source(row, sources)
                             # Replace Source Code
-                            row = replace_code_nomenclature(
-                                row,
-                                nomenclatures,
-                                nomenclatures_columns_types
-                            )
+                            row = replace_code_nomenclature(row, nomenclatures)
 
                         # Write in destination file
                         if write_row == True:
@@ -160,6 +160,35 @@ def parse_file(filename, import_type):
     time_elapsed_for_human = str(datetime.timedelta(seconds=time_elapsed))
     print_msg('Script time')
     print_info(f'   Elapsed: {time_elapsed_for_human}')
+
+def set_actions_type(abbr_type):
+    types = {
+        's': 'SYNTHESE',
+        'so': 'SOURCE',
+    }
+    if abbr_type in types:
+        Config.setParameter('actions.type', types[abbr_type])
+    else:
+        print_error(f'Type "{abbr_type}" is not implemented !')
+
+def load_actions_config_file(actions_config_file):
+    if actions_config_file != '' and os.path.exists(actions_config_file) :
+        print(f'Actions config file: {actions_config_file}')
+        Config.load(actions_config_file)
+        define_current_actions()
+    else:
+        print_error(f'Actions config file "${actions_config_file}" not exists !')
+
+def define_current_actions():
+    actions_type = Config.get('actions.type')
+    parameters = Config.getSection(actions_type)
+    for key, value in parameters.items():
+        Config.setParameter(key, value)
+
+def load_nomenclatures():
+    if Config.has('actions.type') and Config.get('actions.type') == 'SYNTHESE' :
+        Config.load(Config.nomenclatures_config_file_path)
+
 
 
 if __name__ == '__main__':

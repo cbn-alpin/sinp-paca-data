@@ -2,6 +2,8 @@ import click
 import operator
 import itertools
 
+from helpers.config import Config
+
 
 def print_msg(msg):
     click.echo(click.style(msg, fg='yellow'))
@@ -27,3 +29,13 @@ def find_ranges(data):
         group = list(map(int,group))
         ranges.append((group[0],group[-1]))
     return ranges
+
+def is_empty_or_null(value):
+    is_eon = False
+    if value == None:
+        is_eon = True
+    elif value == '':
+        is_eon = True
+    elif value == Config.get('null_value_string'):
+        is_eon = True
+    return is_eon

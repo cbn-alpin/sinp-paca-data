@@ -23,5 +23,5 @@ Sous Debian Buster :
 ```
 cd sinp-paca-data/import-parser/
 pip3 install --user pipenv
-pipenv install click colorama psycopg2
+pipenv install configobj click colorama psycopg2
 ```

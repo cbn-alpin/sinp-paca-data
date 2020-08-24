@@ -1,26 +1,29 @@
 import psycopg2
 import psycopg2.extras
 
+from helpers.config import Config
+
 class GnDatabase:
     db_connection = None
     db_cursor = None
 
     def connect_to_database(self):
-        # TODO: use settings.ini parameters
         self.db_connection = psycopg2.connect(
-            database='gn2-sinp-paca',
-            user='geonatadmin',
-            password='geonatadmin',
-            host='localhost',
-            port='5432',
+            database=Config.get('db_name'),
+            user=Config.get('db_user'),
+            password=Config.get('db_pass'),
+            host=Config.get('db_host'),
+            port=Config.get('db_port'),
         )
         self.db_cursor = self.db_connection.cursor(
             cursor_factory = psycopg2.extras.DictCursor,
         )
 
     def print_database_infos(self):
+        print('Database infos:')
         # Print PostgreSQL Connection properties
-        print(self.db_connection.get_dsn_parameters())
+        for key, value in self.db_connection.get_dsn_parameters().items():
+            print(f'\t{key}:{value}')
 
         # Print PostgreSQL version
         self.db_cursor.execute("SELECT version()")
@@ -69,7 +72,8 @@ class GnDatabase:
             sources[record['code']] = record['id']
         return sources
 
-    def get_all_nomenclatures(self, nomenclatures_columns_types):
+    def get_all_nomenclatures(self):
+        nomenclatures_columns_types = Config.getSection('NOMENCLATURES')
         types = list(nomenclatures_columns_types.values())
         nomenclature_types_columns = {value: key for key, value in nomenclatures_columns_types.items()}
 
