@@ -1,5 +1,7 @@
-
-BEGIN;
+\echo '-------------------------------------------------------------------------------'
+\echo 'Deleting previously loaded data in synthese'
+\echo 'GeoNature database compatibility : v2.3.0+'
+BEGIN ;
 
 
 \echo '----------------------------------------------------------------------------'

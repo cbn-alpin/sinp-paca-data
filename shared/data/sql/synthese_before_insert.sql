@@ -1,4 +1,4 @@
-\echo 'Prepare database before insert into synthese'
+\echo 'Prepare database before inserting data into synthese'
 \echo 'Rights: superuser'
 \echo 'GeoNature database compatibility : v2.3.0+'
 BEGIN;
@@ -11,7 +11,7 @@ SET search_path = gn_synthese, public, pg_catalog ;
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Update "synthese_id_synthese_seq" sequence'
-SELECT SETVAL('synthese_id_synthese_seq', (SELECT MAX(id_synthese) FROM gn_synthese.synthese)) ;
+SELECT SETVAL('synthese_id_synthese_seq', (SELECT MAX(id_synthese) FROM synthese)) ;
 
 
 \echo '-------------------------------------------------------------------------------'
@@ -124,7 +124,7 @@ DO $$
             FROM information_schema.tables
             WHERE table_schema = 'gn_synthese'
                 AND table_name = 'taxons_synthese_autocomplete'
-        ) THEN
+        ) IS TRUE THEN
             RAISE NOTICE ' Disable synthese trigger "trg_refresh_taxons_forautocomplete"' ;
             ALTER TABLE synthese DISABLE TRIGGER trg_refresh_taxons_forautocomplete ;
         ELSE

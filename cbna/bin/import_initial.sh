@@ -76,13 +76,12 @@ function main() {
     cd "${module_dir}/"
     prepareDbBeforeRestoring
     restoreCbnaFloreExport
-    cleanDbAfterRestoring
+    cleanAfterRestoring
     buildImportTable
     addHelpersFunctions
     addMetaData
-    prepareDbBeforeSyntheseInserting
+    prepareSynthese
     importSyntheseData
-    cleanDbAfterSyntheseInserting
     maintainDb
 
     #+----------------------------------------------------------------------------------------------------------+
@@ -128,7 +127,7 @@ function restoreCbnaFloreExport() {
         "${raw_dir}/${cbna_filename_archive}"
 }
 
-function cleanDbAfterRestoring() {
+function cleanAfterRestoring() {
     printMsg "Renaming restored CBNA data table to source ..."
 
     sudo -n -u "${pg_admin_name}" -s \
@@ -168,21 +167,30 @@ function addMetaData() {
             -f "${sql_dir}/initial/005_add_metadata.sql"
 }
 
-function prepareDbBeforeSyntheseInserting() {
-    printMsg "Preparing database before insert into syntese table ..."
+function prepareSynthese() {
+    printMsg "Preparing GeoNature database before deleting data into syntese table ..."
+    export PGPASSWORD="${db_pass}"; \
+        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
+            -f "${sql_shared_dir}/synthese_before_delete.sql"
 
     printVerbose "Remove if necessary previous data from synthese"
     export PGPASSWORD="${db_pass}"; \
         psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
             -f "${sql_dir}/initial/006_synthese_clean.sql"
 
+    printMsg "Restoring GeoNature database after deleting data into syntese table ..."
+    export PGPASSWORD="${db_pass}"; \
+        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
+            -f "${sql_shared_dir}/synthese_after_delete.sql"
+}
+
+function importSyntheseData() {
+    printMsg "Preparing database before insert into syntese table ..."
     checkSuperuser
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
             -f "${sql_shared_dir}/synthese_before_insert.sql"
-}
 
-function importSyntheseData() {
     printMsg "Importing CBNA data into synthese ..."
     local readonly sql_file="${sql_dir}/initial/007_synthese_insert.sql"
     local readonly tmp_sql_file="${sql_dir}/initial/007_synthese_insert.tmp.sql"
@@ -200,11 +208,7 @@ function importSyntheseData() {
     export PGPASSWORD="${db_pass}"; \
         psql -h "${db_host}" -U "${db_user}" -d "${db_name}" -f "${tmp_sql_file}"
 
-}
-
-function cleanDbAfterSyntheseInserting() {
     printMsg "Restoring database after insert into syntese table ..."
-
     checkSuperuser
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \

@@ -1,4 +1,4 @@
-\echo 'Restore database after insert into synthese'
+\echo 'Restore database after inserting data into synthese'
 \echo 'Rights: superuser'
 \echo 'GeoNature database compatibility : v2.3.0+'
 BEGIN;
@@ -317,10 +317,10 @@ DO $$
             RAISE NOTICE ' Replay actions on table "synthese" (trg_refresh_taxons_forautocomplete)' ;
 
             RAISE NOTICE '  Clean table taxons_synthese_autocomplete' ;
-            TRUNCATE TABLE gn_synthese.taxons_synthese_autocomplete;
+            TRUNCATE TABLE taxons_synthese_autocomplete;
 
             RAISE NOTICE '  Reinsert scientific names in table taxons_synthese_autocomplete' ;
-            INSERT INTO gn_synthese.taxons_synthese_autocomplete
+            INSERT INTO taxons_synthese_autocomplete
                 SELECT DISTINCT
                     t.cd_nom,
                     t.cd_ref,
@@ -329,12 +329,12 @@ DO $$
                     t.lb_nom,
                     t.regne,
                     t.group2_inpn
-                FROM gn_synthese.synthese s
-                    JOIN taxonomie.taxref t
+                FROM synthese AS s
+                    JOIN taxonomie.taxref AS t
                         ON (t.cd_nom = s.cd_nom) ;
 
             RAISE NOTICE '  Reinsert vernacular names in table taxons_synthese_autocomplete' ;
-            INSERT INTO gn_synthese.taxons_synthese_autocomplete
+            INSERT INTO taxons_synthese_autocomplete
                 SELECT DISTINCT
                     t.cd_nom,
                     t.cd_ref,
@@ -343,8 +343,8 @@ DO $$
                     t.lb_nom,
                     t.regne,
                     t.group2_inpn
-                FROM gn_synthese.synthese s
-                    JOIN taxonomie.taxref t
+                FROM synthese AS s
+                    JOIN taxonomie.taxref AS t
                         ON (t.cd_nom = s.cd_nom AND t.cd_nom = t.cd_ref)
                 WHERE t.nom_vern IS NOT NULL ;
         ELSE
@@ -439,7 +439,7 @@ DO $$
             FROM information_schema.tables
             WHERE table_schema = 'gn_synthese'
                 AND table_name = 'taxons_synthese_autocomplete'
-        ) THEN
+        ) IS TRUE THEN
             RAISE NOTICE ' Enable synthese trigger "trg_refresh_taxons_forautocomplete"' ;
             ALTER TABLE synthese ENABLE TRIGGER trg_refresh_taxons_forautocomplete ;
         ELSE
