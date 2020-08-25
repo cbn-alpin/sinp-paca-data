@@ -221,7 +221,7 @@ function maintainDb() {
     checkSuperuser
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
-            -f "${sql_shared_dir}/synthese_after_insert.sql"
+            -f "${sql_shared_dir}/synthese_maintenance.sql"
 }
 
 main "${@}"
