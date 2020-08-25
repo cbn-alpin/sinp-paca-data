@@ -145,18 +145,19 @@ def parse_file(filename, import_type, actions_config_file):
                 except csv.Error as e:
                     sys.exit(f'Error in file {filename}, line {reader.line_num}: {e}')
     # Report
-    print_msg('Lines removed')
-    print_info(f"   Total: {reports['lines_removed_total']: }")
-    print_info(f'   List of lines with unkown scinames codes removed:')
-    for key in reports['lines_removed_list']:
-        grouped_removed_lines = list(find_ranges(reports['lines_removed_list'][key]))
-        removed_lines_to_print = []
-        for line_group in grouped_removed_lines:
-            if (line_group[0] == line_group[1]):
-                removed_lines_to_print.append(str(line_group[0]))
-            else:
-                removed_lines_to_print.append(str(line_group[0]) + '-' + str(line_group[1]))
-        print_info(f"       #{key}: {', '.join(removed_lines_to_print)}")
+    if import_type == 's' :
+        print_msg('Lines removed')
+        print_info(f"   Total: {reports['lines_removed_total']: }")
+        print_info(f'   List of lines with unkown scinames codes removed:')
+        for key in reports['lines_removed_list']:
+            grouped_removed_lines = list(find_ranges(reports['lines_removed_list'][key]))
+            removed_lines_to_print = []
+            for line_group in grouped_removed_lines:
+                if (line_group[0] == line_group[1]):
+                    removed_lines_to_print.append(str(line_group[0]))
+                else:
+                    removed_lines_to_print.append(str(line_group[0]) + '-' + str(line_group[1]))
+            print_info(f"       #{key}: {', '.join(removed_lines_to_print)}")
 
 
     # Script time elapsed
