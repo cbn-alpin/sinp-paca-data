@@ -9,6 +9,7 @@ SET search_path = gn_synthese, public, pg_catalog ;
 \echo '-------------------------------------------------------------------------------'
 \echo 'Copy CVS file to synthese'
 COPY synthese (
+    unique_id_sinp,
     id_source,
     id_module,
     entity_source_pk_value,

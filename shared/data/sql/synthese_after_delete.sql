@@ -44,15 +44,15 @@ DO $$
             WHERE table_schema = 'gn_synthese'
                 AND table_name = 'taxons_synthese_autocomplete'
         ) IS TRUE THEN
-            RAISE NOTICE ' Replay trigger action'
+            RAISE NOTICE ' Replay trigger action' ;
             DELETE FROM taxons_synthese_autocomplete AS tsa
             WHERE NOT EXISTS (
                 SELECT DISTINCT ON (s.cd_nom) 'X'
                 FROM synthese AS s
-                WHERE s.cd_nom = tsa.cd_nom;
-            )
+                WHERE s.cd_nom = tsa.cd_nom
+            ) ;
 
-            RAISE NOTICE ' Enable trigger'
+            RAISE NOTICE ' Enable trigger' ;
             ALTER TABLE synthese ENABLE TRIGGER trg_refresh_taxons_forautocomplete ;
         ELSE
       		RAISE NOTICE ' GeoNature > v2.3.2 => trigger "trg_refresh_taxons_forautocomplete" not exists !' ;
