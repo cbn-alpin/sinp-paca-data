@@ -14,8 +14,8 @@
 
 ## Synchronisation serveur
 
-Pour transférer les données sur le serveur, utiliser `rsync` en testant avec l'option `--dry-run` (à supprimer quand tout est ok):
+Pour transférer uniquement le dossier `cbna/` sur le serveur, utiliser `rsync` en testant avec l'option `--dry-run` (à supprimer quand tout est ok):
 
 ```
-rsync -avL --exclude var --exclude .gitignore --exclude settings.ini --exclude data/raw ./ admin@db-paca-sinp:/home/admin/data/cbna/ --dry-run
+rsync -av --copy-unsafe-links --exclude var --exclude .gitignore --exclude settings.ini --exclude "data/raw/*" ./ geonat@db-paca-sinp:~/data/cbna/ --dry-run
 ```
