@@ -5,7 +5,7 @@ import uuid
 import configparser
 
 from helpers.config import Config
-from helpers.helpers import print_msg, print_info, print_error, print_verbose, find_ranges, is_empty_or_null
+from helpers.helpers import print_msg, print_info, print_error, print_verbose, find_ranges, is_uuid
 
 
 # Computing CSV file number of lines without header line
@@ -31,6 +31,12 @@ def remove_headers(fieldnames):
                     output.remove(field)
     return output
 
+# Add new row entries if necessary
+def add_headers(fieldnames):
+    output = fieldnames.copy()
+    if Config.get('actions.add_uuid_obs') and 'unique_id_sinp' not in fieldnames:
+        output.insert(0, 'unique_id_sinp')
+    return output
 
 # Remove row entries where fieldname match pattern
 def remove_columns(row):
@@ -41,6 +47,12 @@ def remove_columns(row):
             for field in fieldnames:
                 if re.match(rf'^{pattern}$', field):
                     del row[field]
+    return row
+
+# Add row entries if necessary
+def add_columns(row):
+    if Config.get('actions.add_uuid_obs') and 'unique_id_sinp' not in row:
+        row['unique_id_sinp'] = Config.get('null_value_string')
     return row
 
 def insert_values_to_columns(row):
@@ -55,7 +67,7 @@ def insert_values_to_columns(row):
 
 def add_uuid_obs(row):
     if Config.get('actions.add_uuid_obs'):
-        if is_empty_or_null(row['unique_id_sinp']):
+        if not is_uuid(row['unique_id_sinp']):
             row['unique_id_sinp'] = uuid.uuid4()
     return row
 

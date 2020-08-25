@@ -1,6 +1,7 @@
 import click
 import operator
 import itertools
+import uuid
 
 from helpers.config import Config
 
@@ -29,6 +30,12 @@ def find_ranges(data):
         group = list(map(int,group))
         ranges.append((group[0],group[-1]))
     return ranges
+
+def is_uuid(value):
+    try:
+        return uuid.UUID(value).version == 4
+    except ValueError:
+        return False
 
 def is_empty_or_null(value):
     is_eon = False

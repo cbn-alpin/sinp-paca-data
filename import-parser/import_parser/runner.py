@@ -95,6 +95,7 @@ def parse_file(filename, import_type, actions_config_file):
         reader = csv.DictReader(f_src, dialect='sql_copy')
         with open(filename_dest, 'w', newline='', encoding='utf-8') as f_dest:
             fieldnames = remove_headers(reader.fieldnames)
+            fieldnames = add_headers(fieldnames)
             writer = csv.DictWriter(f_dest, dialect='sql_copy', fieldnames=fieldnames)
             writer.writeheader()
 
@@ -106,6 +107,9 @@ def parse_file(filename, import_type, actions_config_file):
 
                         # Remove useless columns
                         row = remove_columns(row)
+
+                        # Add new columns if necessary
+                        row = add_columns(row)
 
                         # Insert value in colums
                         row = insert_values_to_columns(row)

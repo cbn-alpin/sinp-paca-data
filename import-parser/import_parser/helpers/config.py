@@ -1,7 +1,7 @@
 import os
 import re
 import ast
-from configparser import ConfigParser, ExtendedInterpolation
+from configparser import ConfigParser, ExtendedInterpolation, NoOptionError
 
 
 class Config:
@@ -22,7 +22,7 @@ class Config:
 
     @classmethod
     def _initialize(cls):
-        """Start config by reading all settings.ini files."""
+        """ Start config by reading all settings.ini files. """
         cls.initialized = True # Must be in first place
         config_files = [
             cls.default_shared_config_file_path,
@@ -59,6 +59,9 @@ class Config:
 
     @classmethod
     def load(cls, path):
+        if not cls.initialized:
+            cls._initialize()
+
         try:
             with open(path, 'r') as f:
                 text = f.read()
@@ -71,9 +74,7 @@ class Config:
 
     @classmethod
     def has(cls, key):
-        """
-        Return True if key exists, else False.
-        """
+        """ Return True if key exists, else False. """
         if not cls.initialized:
             cls._initialize()
 
@@ -84,17 +85,25 @@ class Config:
     @classmethod
     def get(cls, key):
         """
-        Get a value from all settings.ini files loaded.
+        Get a value of an option from all settings.ini files loaded.
+
         In key, you can use dot to separate section and parameter name like this : section.parameter
         Double quoted characters will be stripped.
         If value is surrounded by [] then a list will be return.
         If value is surrounded by {} then a dict will be return.
+        If value is 0, no, false or off then False (boolean) will be return.
+        If value is 1, yes, true or on then True (boolean) will be return.
+        If option was not found, a value None is returned.
         """
         if not cls.initialized:
             cls._initialize()
 
         section, option = map(str, cls._splitKey(key))
-        value = cls.configParser.get(section, option)
+        try:
+            value = cls.configParser.get(section, option)
+        except NoOptionError:
+            return None
+
         # Strip double quotes
         value = value.strip('"')
         # Make an eval of the value if value is surrounded by [] or {}
@@ -111,6 +120,8 @@ class Config:
     def setParameter(cls, key, value):
         """
         Set a value.
+
+        In key, you can use dot to separate section and parameter name like this : section.parameter
         """
         if not cls.initialized:
             cls._initialize()
@@ -125,7 +136,9 @@ class Config:
     @classmethod
     def getSection(cls, section):
         """
-        Get alls value-key pairs for the given section (without default section items).
+        Get alls value-key pairs for the given section.
+
+        All default section items will be removed.
         """
         if not cls.initialized:
             cls._initialize()
