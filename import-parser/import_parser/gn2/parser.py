@@ -104,10 +104,31 @@ def replace_code_source(row, sources):
 def replace_code_nomenclature(row, nomenclatures):
     columns_types = Config.getSection('NOMENCLATURES')
     fieldnames = list(row.keys())
-    for field in fieldnames:
-        if field.startswith('code_nomenclature_'):
-            nomenclature_type = columns_types[field]
-            code = row[field]
-            if code != '\\N':
-                row[field] = nomenclatures[nomenclature_type][code]
+    try:
+        for field in fieldnames:
+            if field.startswith('code_nomenclature_'):
+                nomenclature_type = columns_types[field]
+                code = row[field]
+                if code != '\\N':
+                    row[field] = nomenclatures[nomenclature_type][code]
+    except KeyError as e:
+        print(f"WARNING: nomenclature entry missing !\nNomenclature type: {nomenclature_type}\nCode: {code}")
+        exit()
+
+    return row
+
+def replace_code_organism(row, organisms):
+    if 'code_source' in row.keys() and row['code_organism'] != None:
+        code = row['code_organism']
+        if organisms[code]:
+            id = organisms[code]
+            row['code_organism'] = id
+    return row
+
+def replace_code_acquisition_framework(row, acquisition_frameworks):
+    if 'code_acquisition_framework' in row.keys() and row['code_acquisition_framework'] != None:
+        code = row['code_acquisition_framework']
+        if acquisition_frameworks[code]:
+            id = acquisition_frameworks[code]
+            row['code_acquisition_framework'] = id
     return row

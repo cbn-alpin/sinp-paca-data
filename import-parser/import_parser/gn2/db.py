@@ -103,6 +103,17 @@ class GnDatabase:
             codes[str(record['code'])] = record['name']
         return codes
 
+    def get_all_organisms(self):
+        self.db_cursor.execute(f"""
+            SELECT nom_organisme AS code, id_organisme AS id
+            FROM utilisateurs.bib_organismes
+        """)
+        records = self.db_cursor.fetchall()
+        organisms = {}
+        for record in records:
+            organisms[record['code']] = record['id']
+        return organisms
+
     def check_sciname_code(self, sciname_code):
         self.db_cursor.execute(f"""
             SELECT t.cd_nom
@@ -110,3 +121,14 @@ class GnDatabase:
             WHERE cd_nom = %s
         """, (sciname_code,))
         return self.db_cursor.fetchone() is not None
+
+    def get_all_acquisition_frameworks(self):
+        self.db_cursor.execute(f"""
+            SELECT acquisition_framework_name AS code, id_acquisition_framework AS id
+            FROM gn_meta.t_acquisition_frameworks
+        """)
+        records = self.db_cursor.fetchall()
+        acquisition_frameworks = {}
+        for record in records:
+            acquisition_frameworks[record['code']] = record['id']
+        return acquisition_frameworks
