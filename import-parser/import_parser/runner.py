@@ -110,7 +110,8 @@ def parse_file(filename, import_type, actions_config_file):
             'lines_removed_total': 0,
             'sciname_removed_lines': {},
             'dataset_removed_lines': {},
-            'date_removed_lines': [],
+            'date_missing_removed_lines': [],
+            'date_max_removed_lines': [],
         }
 
         reader = csv.DictReader(f_src, dialect='sql_copy')
@@ -120,7 +121,7 @@ def parse_file(filename, import_type, actions_config_file):
             writer = csv.DictWriter(f_dest, dialect='sql_copy', fieldnames=fieldnames)
             writer.writeheader()
 
-            with click.progressbar(length=int(total_csv_lines_nbr), label="Parsing lines") as pbar:
+            with click.progressbar(length=int(total_csv_lines_nbr), label="Parsing lines", show_pos=True) as pbar:
                 try:
                     for row in reader:
                         # Initialize variables
@@ -147,25 +148,38 @@ def parse_file(filename, import_type, actions_config_file):
                                 write_row = False
                                 print_error(f"Line {reader.line_num} removed, sciname code {row['cd_nom']} not exists in TaxRef !")
                                 reports['lines_removed_total'] += 1
-                                if str(row['cd_nom']) not in reports['sciname_removed_lines']:
-                                    reports['sciname_removed_lines'][str(row['cd_nom'])] = []
-                                reports['sciname_removed_lines'][str(row['cd_nom'])].append(reader.line_num)
+                                report_value = get_report_field_value(row, reader)
+                                (
+                                    reports['sciname_removed_lines']
+                                    .setdefault(str(row['cd_nom']), [])
+                                    .append(report_value)
+                                )
 
                             # Check Dataset code
                             if check_dataset_code(row, datasets) == False:
                                 write_row = False
                                 print_error(f"Line {reader.line_num} removed, dataset code {row['code_dataset']} not exists !")
                                 reports['lines_removed_total'] += 1
-                                if str(row['code_dataset']) not in reports['dataset_removed_lines']:
-                                    reports['dataset_removed_lines'][str(row['code_dataset'])] = []
-                                reports['dataset_removed_lines'][str(row['code_dataset'])].append(reader.line_num)
+                                report_value = get_report_field_value(row, reader)
+                                (
+                                    reports['dataset_removed_lines']
+                                    .setdefault(str(row['code_dataset']), [])
+                                    .append(report_value)
+                                )
 
-                            # Check data_min and date_max
+                            # Check date_min and date_max
                             if check_dates(row) == False:
                                 write_row = False
                                 print_error(f"Line {reader.line_num} removed, mandatory dates missing !")
                                 reports['lines_removed_total'] += 1
-                                reports['date_removed_lines'].append(str(reader.line_num))
+                                report_value = get_report_field_value(row, reader)
+                                reports['date_missing_removed_lines'].append(report_value)
+                            elif check_date_max_greater_than_min(row) == False:
+                                write_row = False
+                                print_error(f"Line {reader.line_num} removed, date max not greater than date min !")
+                                reports['lines_removed_total'] += 1
+                                report_value = get_report_field_value(row, reader)
+                                reports['date_max_removed_lines'].append(report_value)
 
                             if write_row != False:
                                 # Replace Dataset Code
@@ -192,7 +206,8 @@ def parse_file(filename, import_type, actions_config_file):
                             writer.writerow(row)
 
                         # Update progressbar
-                        pbar.update(int(reader.line_num))
+                        #pbar.update(int(reader.line_num))
+                        pbar.update(1)
                 except csv.Error as e:
                     sys.exit(f'Error in file {filename}, line {reader.line_num}: {e}')
     # Report
@@ -200,7 +215,7 @@ def parse_file(filename, import_type, actions_config_file):
         print_msg('Lines removed')
         print_info(f"   Total: {reports['lines_removed_total']: }")
 
-        print_info(f'   List of lines with unkown scinames codes removed:')
+        print_info(f'   List of removed lines with unkown scinames codes:')
         for key in reports['sciname_removed_lines']:
             grouped_removed_lines = list(find_ranges(reports['sciname_removed_lines'][key]))
             removed_lines_to_print = []
@@ -211,12 +226,20 @@ def parse_file(filename, import_type, actions_config_file):
                     removed_lines_to_print.append(str(line_group[0]) + '-' + str(line_group[1]))
             print_info(f"       #{key}: {', '.join(removed_lines_to_print)}")
 
-        print_info(f'   List of lines with unkown dataset codes removed:')
+        print_info(f'   List of removed lines with unkown dataset codes:')
+        total = 0
         for lines, dataset_code in reports['dataset_removed_lines'].items():
             print_info(f"       #{dataset_code}: {', '.join(lines)}")
+            total += len(lines)
+        print_info(f"       Total: {total}")
 
-        print_info(f'   List of lines with unkown date min or max removed:')
-        print_info(f"       #{', '.join(reports['date_removed_lines'])}")
+        total = len(reports['date_missing_removed_lines'])
+        print_info(f'   List of {total} removed lines with missing date min or max:')
+        print_info(f"       #{', '.join(reports['date_missing_removed_lines'])}")
+
+        total = len(reports['date_max_removed_lines'])
+        print_info(f'   List of {total} removed lines with date max not greater than date min:')
+        print_info(f"       #{', '.join(reports['date_max_removed_lines'])}")
 
 
 

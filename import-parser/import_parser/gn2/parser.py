@@ -76,6 +76,16 @@ def add_uuid_obs(row):
             row['unique_id_sinp'] = uuid.uuid4()
     return row
 
+def get_report_field_value(row, reader):
+    value = str(reader.line_num)
+    if (
+        Config.has('reports.field')
+        and Config.get('reports.field') in row
+        and row[Config.get('reports.field')] != Config.get('null_value_string')
+    ):
+        value = row[Config.get('reports.field')]
+    return value
+
 def check_sciname_code(row, scinames_codes):
     exists = True
     if row['cd_nom'] != None:
@@ -89,12 +99,18 @@ def check_dataset_code(row, datasets_codes):
     return exists
 
 def check_dates(row):
-    exists = True
+    is_ok = True
     if row['date_min'] == None or row['date_min'] == Config.get('null_value_string'):
-        exists = False
+        is_ok = False
     if row['date_max'] == None or row['date_max'] == Config.get('null_value_string'):
-        exists = False
-    return exists
+        is_ok = False
+    return is_ok
+
+def check_date_max_greater_than_min(row):
+    is_ok = False
+    if check_dates(row) and row['date_max'] >= row['date_min']:
+        is_ok = True
+    return is_ok
 
 def replace_code_dataset(row, datasets):
     if 'code_dataset' in row.keys() and row['code_dataset'] != None:
