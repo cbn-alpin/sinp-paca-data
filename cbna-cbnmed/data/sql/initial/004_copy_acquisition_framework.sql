@@ -8,45 +8,6 @@ BEGIN;
 SET client_encoding = 'UTF8';
 SET search_path = gn_meta;
 
-\echo '-------------------------------------------------------------------------------'
-\echo 'Set function "get_id_acquisition_framework_by_name()"'
-CREATE OR REPLACE FUNCTION gn_meta.get_id_acquisition_framework_by_name(afName character varying)
-    RETURNS integer
-    LANGUAGE plpgsql
-    IMMUTABLE
-AS
-$function$
-    -- Function which return the id_acquisition_framework from an acquition_framework_name
-    DECLARE idAcquisitionFramework integer;
-
-    BEGIN
-        SELECT INTO idAcquisitionFramework id_acquisition_framework
-        FROM gn_meta.t_acquisition_frameworks AS af
-        WHERE af.acquisition_framework_name = afName ;
-
-        RETURN idAcquisitionFramework ;
-    END;
-$function$ ;
-
-\echo '-------------------------------------------------------------------------------'
-\echo 'Set function "get_id_organism_by_name()"'
-CREATE OR REPLACE FUNCTION utilisateurs.get_id_organism_by_name(oName character varying)
-    RETURNS integer
-    LANGUAGE plpgsql
-    IMMUTABLE
-AS
-$function$
-    -- Function which return the id_acquisition_framework from an acquition_framework_name
-    DECLARE idOrganism integer;
-
-    BEGIN
-        SELECT INTO idOrganism id_organisme
-        FROM utilisateurs.bib_organismes AS bo
-        WHERE bo.nom_organisme = oName ;
-
-        RETURN idOrganism ;
-    END;
-$function$ ;
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Set function "get_id_role_by_identifier()"'

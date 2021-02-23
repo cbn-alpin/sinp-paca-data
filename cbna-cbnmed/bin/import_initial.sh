@@ -70,13 +70,15 @@ function main() {
 
     downloadDataArchive
     extractArchive
+    prepareDb
     insertSource
     insertOrganism
     insertUser
     insertAcquisitionFramework
     insertDataset
-    #insertSynthese
-    #maintainDb
+    prepareSynthese
+    insertSynthese
+    maintainDb
 
     #+----------------------------------------------------------------------------------------------------------+
     # Display script execution infos
@@ -107,6 +109,19 @@ function extractArchive() {
             printVerbose "CSV files already extracted." ${Gra}
         fi
     fi
+}
+
+function prepareDb() {
+    printMsg "Inserting utils functions into GeoNature database..."
+    export PGPASSWORD="${db_pass}"; \
+        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
+            -f "${sql_shared_dir}/utils_functions.sql"
+
+    printMsg "Inserting missing data into GeoNature database..."
+    checkSuperuser
+    sudo -n -u "${pg_admin_name}" -s \
+        psql -d "${db_name}" \
+            -f "${sql_dir}/initial/000_prepare_db.sql"
 }
 
 function insertSource() {
