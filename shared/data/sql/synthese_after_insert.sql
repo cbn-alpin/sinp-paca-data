@@ -28,15 +28,16 @@ DO $$
                 FOREIGN KEY (id_area_attachment) REFERENCES ref_geo.l_areas(id_area)
                 ON UPDATE CASCADE ;
 
-            RAISE NOTICE ' Add "check_synthese_info_geo_type_id_area_attachment"' ;
-            ALTER TABLE synthese ADD CONSTRAINT check_synthese_info_geo_type_id_area_attachment
-                CHECK (
-                    NOT (
-                        ((ref_nomenclatures.get_cd_nomenclature(id_nomenclature_info_geo_type))::text = '2'::text)
-                        AND
-                        (id_area_attachment IS NULL)
-                    )
-                ) NOT VALID ;
+            -- RAISE NOTICE ' Add "check_synthese_info_geo_type_id_area_attachment"' ;
+            -- -- Seems remove in GN > 2.5.5
+            -- ALTER TABLE synthese ADD CONSTRAINT check_synthese_info_geo_type_id_area_attachment
+            --     CHECK (
+            --         NOT (
+            --             ((ref_nomenclatures.get_cd_nomenclature(id_nomenclature_info_geo_type))::text = '2'::text)
+            --             AND
+            --             (id_area_attachment IS NULL)
+            --         )
+            --     ) NOT VALID ;
         ELSE
       		RAISE NOTICE ' GeoNature < v2.4.1 => column "synthese.id_area_attachment" not exists !' ;
         END IF ;
@@ -237,13 +238,6 @@ ALTER TABLE synthese ADD CONSTRAINT check_synthese_obj_count
             'OBJ_DENBR'::character varying
         )
     ) NOT VALID ;
-ALTER TABLE synthese ADD CONSTRAINT check_synthese_obs_technique
-    CHECK (
-        ref_nomenclatures.check_nomenclature_type_by_mnemonique(
-            id_nomenclature_obs_technique,
-            'TECHNIQUE_OBS'::character varying
-        )
-    ) NOT VALID ;
 ALTER TABLE synthese ADD CONSTRAINT check_synthese_observation_status
     CHECK (
         ref_nomenclatures.check_nomenclature_type_by_mnemonique(
@@ -364,7 +358,7 @@ DO $$
                 AND table_name = 'synthese'
                 AND column_name='id_nomenclature_obs_meth'
         ) IS TRUE THEN
-            RAISE NOTICE ' Restore foreign keys constraints on synthese.id_nomenclature_obs_meth"' ;
+            RAISE NOTICE ' GeoNature < v2.5.0, restore foreign keys constraints on synthese.id_nomenclature_obs_meth for METH_OBS' ;
             ALTER TABLE synthese ADD CONSTRAINT check_synthese_obs_meth
             CHECK (
                 ref_nomenclatures.check_nomenclature_type_by_mnemonique(
@@ -372,8 +366,24 @@ DO $$
                     'METH_OBS'::character varying
                 )
             ) NOT VALID ;
+
+            RAISE NOTICE ' GeoNature < v2.5.0, restore foreign keys constraints on synthese.id_nomenclature_obs_technique for TECHNIQUE_OBS' ;
+            ALTER TABLE synthese ADD CONSTRAINT check_synthese_obs_technique
+            CHECK (
+                ref_nomenclatures.check_nomenclature_type_by_mnemonique(
+                    id_nomenclature_obs_technique,
+                    'TECHNIQUE_OBS'::character varying
+                )
+            ) NOT VALID ;
         ELSE
-      		RAISE NOTICE ' GeoNature >= v2.5.0 => column "id_nomenclature_obs_meth" not exists on table "gn_synthese.synthese" !' ;
+      		RAISE NOTICE ' GeoNature >= v2.5.0, , restore foreign keys constraints on synthese.id_nomenclature_obs_technique for METH_OBS' ;
+            ALTER TABLE synthese ADD CONSTRAINT check_synthese_obs_technique
+            CHECK (
+                ref_nomenclatures.check_nomenclature_type_by_mnemonique(
+                    id_nomenclature_obs_technique,
+                    'METH_OBS'::character varying
+                )
+            ) NOT VALID ;
         END IF ;
     END
 $$ ;
