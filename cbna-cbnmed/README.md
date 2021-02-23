@@ -38,7 +38,13 @@ tar jcvf ../2021-02-10_sinp_paca_cbna-cbnmed.tar.bz2 .
 
 L'ouverture du fichier `synthese.csv` dans un éditeur de texte peut poser
 problème contenu de sa taille.
-Il est possible d'extraire un nombre réduit de lignes à l'aide de la commande suivante :
+Il est possible d'extraire un nombre réduit de lignes du début du fichier 
+à l'aide de la commande suivante :
 ```
 head -1000 synthese.csv > synthese.extract.csv
+```
+Pour extraire des lignes de la fin du fichier, utiliser la commande
+:
+```
+tail -1000 synthese.csv > synthese.extract_end.csv
 ```
