@@ -108,7 +108,9 @@ def parse_file(filename, import_type, actions_config_file):
         total_csv_lines_nbr = calculate_csv_entries_number(f_src)
         reports = {
             'lines_removed_total': 0,
-            'lines_removed_list': {},
+            'sciname_removed_lines': {},
+            'dataset_removed_lines': {},
+            'date_removed_lines': [],
         }
 
         reader = csv.DictReader(f_src, dialect='sql_copy')
@@ -123,6 +125,9 @@ def parse_file(filename, import_type, actions_config_file):
                     for row in reader:
                         # Initialize variables
                         write_row = True
+
+                        # TODO: check if number of fields is egal to number of columns,
+                        # else there is a tab in fields value !
 
                         # Remove useless columns
                         row = remove_columns(row)
@@ -142,18 +147,35 @@ def parse_file(filename, import_type, actions_config_file):
                                 write_row = False
                                 print_error(f"Line {reader.line_num} removed, sciname code {row['cd_nom']} not exists in TaxRef !")
                                 reports['lines_removed_total'] += 1
-                                if str(row['cd_nom']) not in reports['lines_removed_list']:
-                                    reports['lines_removed_list'][str(row['cd_nom'])] = []
-                                reports['lines_removed_list'][str(row['cd_nom'])].append(reader.line_num)
+                                if str(row['cd_nom']) not in reports['sciname_removed_lines']:
+                                    reports['sciname_removed_lines'][str(row['cd_nom'])] = []
+                                reports['sciname_removed_lines'][str(row['cd_nom'])].append(reader.line_num)
 
-                            # Replace Dataset Code
-                            row = replace_code_dataset(row, datasets)
-                            # Replace Module Code
-                            row = replace_code_module(row, modules)
-                            # Replace Source Code
-                            row = replace_code_source(row, sources)
-                            # Replace Nomenclatures Codes
-                            row = replace_code_nomenclature(row, nomenclatures)
+                            # Check Dataset code
+                            if check_dataset_code(row, datasets) == False:
+                                write_row = False
+                                print_error(f"Line {reader.line_num} removed, dataset code {row['code_dataset']} not exists !")
+                                reports['lines_removed_total'] += 1
+                                if str(row['code_dataset']) not in reports['dataset_removed_lines']:
+                                    reports['dataset_removed_lines'][str(row['code_dataset'])] = []
+                                reports['dataset_removed_lines'][str(row['code_dataset'])].append(reader.line_num)
+
+                            # Check data_min and date_max
+                            if check_dates(row) == False:
+                                write_row = False
+                                print_error(f"Line {reader.line_num} removed, mandatory dates missing !")
+                                reports['lines_removed_total'] += 1
+                                reports['date_removed_lines'].append(str(reader.line_num))
+
+                            if write_row != False:
+                                # Replace Dataset Code
+                                row = replace_code_dataset(row, datasets)
+                                # Replace Module Code
+                                row = replace_code_module(row, modules)
+                                # Replace Source Code
+                                row = replace_code_source(row, sources)
+                                # Replace Nomenclatures Codes
+                                row = replace_code_nomenclature(row, nomenclatures)
                         elif import_type == 'u':
                             # Replace Organism Code
                             row = replace_code_organism(row, organisms)
@@ -177,9 +199,10 @@ def parse_file(filename, import_type, actions_config_file):
     if import_type == 's' :
         print_msg('Lines removed')
         print_info(f"   Total: {reports['lines_removed_total']: }")
+
         print_info(f'   List of lines with unkown scinames codes removed:')
-        for key in reports['lines_removed_list']:
-            grouped_removed_lines = list(find_ranges(reports['lines_removed_list'][key]))
+        for key in reports['sciname_removed_lines']:
+            grouped_removed_lines = list(find_ranges(reports['sciname_removed_lines'][key]))
             removed_lines_to_print = []
             for line_group in grouped_removed_lines:
                 if (line_group[0] == line_group[1]):
@@ -187,6 +210,14 @@ def parse_file(filename, import_type, actions_config_file):
                 else:
                     removed_lines_to_print.append(str(line_group[0]) + '-' + str(line_group[1]))
             print_info(f"       #{key}: {', '.join(removed_lines_to_print)}")
+
+        print_info(f'   List of lines with unkown dataset codes removed:')
+        for lines, dataset_code in reports['dataset_removed_lines'].items():
+            print_info(f"       #{dataset_code}: {', '.join(lines)}")
+
+        print_info(f'   List of lines with unkown date min or max removed:')
+        print_info(f"       #{', '.join(reports['date_removed_lines'])}")
+
 
 
     # Script time elapsed

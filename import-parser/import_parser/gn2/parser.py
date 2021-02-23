@@ -45,8 +45,13 @@ def remove_columns(row):
         fieldnames = list(row.keys())
         for pattern in col_patterns:
             for field in fieldnames:
-                if re.match(rf'^{pattern}$', field):
-                    del row[field]
+                try:
+                    if re.match(rf'^{pattern}$', field):
+                        del row[field]
+                except TypeError as e:
+                    print("ERROR: in actions.remove_columns.params config parameter.")
+                    print(f"Pattern: {pattern}\nField: {field}")
+                    print(row)
     return row
 
 # Add row entries if necessary
@@ -75,6 +80,20 @@ def check_sciname_code(row, scinames_codes):
     exists = True
     if row['cd_nom'] != None:
         exists = (str(row['cd_nom']) in scinames_codes)
+    return exists
+
+def check_dataset_code(row, datasets_codes):
+    exists = True
+    if row['code_dataset'] != None:
+        exists = (str(row['code_dataset']) in datasets_codes)
+    return exists
+
+def check_dates(row):
+    exists = True
+    if row['date_min'] == None or row['date_min'] == Config.get('null_value_string'):
+        exists = False
+    if row['date_max'] == None or row['date_max'] == Config.get('null_value_string'):
+        exists = False
     return exists
 
 def replace_code_dataset(row, datasets):
