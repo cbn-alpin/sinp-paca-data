@@ -10,26 +10,6 @@ SET search_path = gn_meta;
 
 
 \echo '-------------------------------------------------------------------------------'
-\echo 'Set function "get_id_role_by_identifier()"'
-CREATE OR REPLACE FUNCTION utilisateurs.get_id_role_by_identifier(identifier character varying)
-    RETURNS integer
-    LANGUAGE plpgsql
-    IMMUTABLE
-AS
-$function$
-    -- Function which return the id_acquisition_framework from an acquition_framework_name
-    DECLARE idRole integer;
-
-    BEGIN
-        SELECT INTO idRole id_role
-        FROM utilisateurs.t_roles AS tr
-        WHERE tr.identifiant = identifier ;
-
-        RETURN idRole ;
-    END;
-$function$ ;
-
-\echo '-------------------------------------------------------------------------------'
 \echo 'Remove "tmp_acquisition_frameworks" table if already exists'
 DROP TABLE IF EXISTS tmp_acquisition_frameworks ;
 
