@@ -47,6 +47,7 @@ DROP INDEX IF EXISTS i_synthese_the_geom_point ;
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Drop synthese foreign keys'
+ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_cd_hab ; -- GN > 2.4.1
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_cd_nom ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_area_attachment ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_dataset ;
@@ -54,6 +55,7 @@ ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_digitiser ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_module ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_nomenclature_bio_condition ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_nomenclature_bio_status ;
+ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_nomenclature_biogeo_status; -- GN > 2.5.2
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_nomenclature_blurring ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_nomenclature_determination_method ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_nomenclature_diffusion_level ;
@@ -63,7 +65,7 @@ ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_nomenclature_id_no
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_nomenclature_info_geo_type ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_nomenclature_life_stage ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_nomenclature_obj_count ;
-ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_nomenclature_obs_meth ;
+ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_nomenclature_obs_meth ; -- GN < 2.5.0
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_nomenclature_obs_technique ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_nomenclature_observation_status ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_nomenclature_sensitivity ;
@@ -79,9 +81,11 @@ ALTER TABLE synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_source ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_altitude_max ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_bio_condition ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_bio_status ;
+ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_biogeo_status ; -- GN > 2.5.2
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_blurring ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_count_max ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_date_max ;
+ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_depth_max ; -- GN > 2.4.1
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_diffusion_level ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_exist_proof ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_geo_object_nature ;
@@ -89,7 +93,7 @@ ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_info_geo_type_id_a
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_life_stage ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_naturalness ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_obj_count ;
-ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_obs_meth ;
+ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_obs_meth ; -- GN < 2.5.0
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_obs_technique ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_observation_status ;
 ALTER TABLE synthese DROP CONSTRAINT IF EXISTS check_synthese_sensitivity ;
@@ -109,30 +113,81 @@ ALTER TABLE synthese DROP CONSTRAINT IF EXISTS enforce_srid_the_geom_point ;
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Disable synthese triggers'
-ALTER TABLE cor_area_synthese DISABLE TRIGGER tri_maj_cor_area_taxon ;
-ALTER TABLE synthese DISABLE TRIGGER tri_update_cor_area_taxon_update_cd_nom ;
 ALTER TABLE synthese DISABLE TRIGGER tri_meta_dates_change_synthese ;
 ALTER TABLE synthese DISABLE TRIGGER tri_insert_cor_area_synthese ;
 
-
-\echo '-------------------------------------------------------------------------------'
-\echo 'For GeoNature v2.3.2 and below handle table "gn_synthese.taxons_synthese_autocomplete"'
+\echo '----------------------------------------------------------------------------'
+\echo 'Disable triggers depending of GeoNature version'
 DO $$
     BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM pg_trigger
+            WHERE tgname = 'tri_maj_cor_area_taxon'
+        ) IS TRUE THEN
+            RAISE NOTICE ' For GeoNature < v2.6.0, disable trigger "tri_maj_cor_area_taxon"' ;
+            ALTER TABLE cor_area_synthese DISABLE TRIGGER tri_maj_cor_area_taxon ;
+        ELSE
+      		RAISE NOTICE ' GeoNature > v2.5.5 => trigger "tri_maj_cor_area_taxon" not exists !' ;
+        END IF ;
+
+        IF EXISTS (
+            SELECT 1
+            FROM pg_trigger
+            WHERE tgname = 'tri_update_cor_area_taxon_update_cd_nom'
+        ) IS TRUE THEN
+            RAISE NOTICE ' For GeoNature < v2.6.0, disable trigger "tri_update_cor_area_taxon_update_cd_nom"' ;
+            ALTER TABLE cor_area_synthese DISABLE TRIGGER tri_update_cor_area_taxon_update_cd_nom ;
+        ELSE
+      		RAISE NOTICE ' GeoNature > v2.5.5 => trigger "tri_update_cor_area_taxon_update_cd_nom" not exists !' ;
+        END IF ;
+
+        IF EXISTS (
+            SELECT 1
+            FROM pg_trigger
+            WHERE tgname = 'tri_update_cor_area_synthese'
+        ) IS TRUE THEN
+            RAISE NOTICE ' For GeoNature > v2.5.5, disable trigger "tri_update_cor_area_synthese"' ;
+            ALTER TABLE synthese DISABLE TRIGGER tri_update_cor_area_synthese ;
+        ELSE
+      		RAISE NOTICE ' GeoNature < v2.6.0 => trigger "tri_update_cor_area_synthese" not exists !' ;
+        END IF ;
+
+        IF EXISTS (
+            SELECT 1
+            FROM pg_trigger
+            WHERE tgname = 'tri_insert_calculate_sensitivity'
+        ) IS TRUE THEN
+            RAISE NOTICE ' For GeoNature > v2.5.5, disable trigger "tri_insert_calculate_sensitivity"' ;
+            ALTER TABLE synthese DISABLE TRIGGER tri_insert_calculate_sensitivity ;
+        ELSE
+      		RAISE NOTICE ' GeoNature < v2.6.0 => trigger "tri_insert_calculate_sensitivity" not exists !' ;
+        END IF ;
+
+        IF EXISTS (
+            SELECT 1
+            FROM pg_trigger
+            WHERE tgname = 'tri_update_calculate_sensitivity'
+        ) IS TRUE THEN
+            RAISE NOTICE ' For GeoNature > v2.5.5, disable trigger "tri_update_calculate_sensitivity"' ;
+            ALTER TABLE synthese DISABLE TRIGGER tri_update_calculate_sensitivity ;
+        ELSE
+      		RAISE NOTICE ' GeoNature < v2.6.0 => trigger "tri_update_calculate_sensitivity" not exists !' ;
+        END IF ;
+
         IF EXISTS (
             SELECT 1
             FROM information_schema.tables
             WHERE table_schema = 'gn_synthese'
                 AND table_name = 'taxons_synthese_autocomplete'
         ) IS TRUE THEN
-            RAISE NOTICE ' Disable synthese trigger "trg_refresh_taxons_forautocomplete"' ;
+            RAISE NOTICE ' For GeoNature <= v2.3.2, disable trigger "trg_refresh_taxons_forautocomplete"' ;
             ALTER TABLE synthese DISABLE TRIGGER trg_refresh_taxons_forautocomplete ;
         ELSE
       		RAISE NOTICE ' GeoNature > v2.3.2 => table "gn_synthese.taxons_synthese_autocomplete" not present !' ;
         END IF ;
     END
 $$ ;
-
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'COMMIT if all is ok:'

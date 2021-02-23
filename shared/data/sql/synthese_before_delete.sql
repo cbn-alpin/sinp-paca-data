@@ -11,12 +11,23 @@ SET search_path = gn_synthese, public, pg_catalog ;
 
 
 \echo '----------------------------------------------------------------------------'
-\echo 'Disable trigger "tri_del_area_synt_maj_corarea_tax"'
-ALTER TABLE synthese DISABLE TRIGGER tri_del_area_synt_maj_corarea_tax ;
-
+\echo 'For GeoNature < v2.6.0, disable trigger "tri_del_area_synt_maj_corarea_tax"'
+DO $$
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM pg_trigger
+            WHERE tgname = 'tri_del_area_synt_maj_corarea_tax'
+        ) IS TRUE THEN
+            ALTER TABLE synthese DISABLE TRIGGER tri_del_area_synt_maj_corarea_tax ;
+        ELSE
+      		RAISE NOTICE ' GeoNature > v2.6.0 => trigger "tri_del_area_synt_maj_corarea_tax" not exists !' ;
+        END IF ;
+    END
+$$ ;
 
 \echo '-------------------------------------------------------------------------------'
-\echo 'For GeoNature < v2.3.2 disable synthese trigger "trg_refresh_taxons_forautocomplete"'
+\echo 'For GeoNature < v2.3.2, disable synthese trigger "trg_refresh_taxons_forautocomplete"'
 DO $$
     BEGIN
         IF EXISTS (

@@ -90,9 +90,6 @@ ALTER TABLE synthese ADD CONSTRAINT fk_synthese_id_nomenclature_life_stage
 ALTER TABLE synthese ADD CONSTRAINT fk_synthese_id_nomenclature_obj_count
     FOREIGN KEY (id_nomenclature_obj_count) REFERENCES ref_nomenclatures.t_nomenclatures(id_nomenclature)
     ON UPDATE CASCADE ;
-ALTER TABLE synthese ADD CONSTRAINT fk_synthese_id_nomenclature_obs_meth
-    FOREIGN KEY (id_nomenclature_obs_meth) REFERENCES ref_nomenclatures.t_nomenclatures(id_nomenclature)
-    ON UPDATE CASCADE ;
 ALTER TABLE synthese ADD CONSTRAINT fk_synthese_id_nomenclature_obs_technique
     FOREIGN KEY (id_nomenclature_obs_technique) REFERENCES ref_nomenclatures.t_nomenclatures(id_nomenclature)
     ON UPDATE CASCADE ;
@@ -118,6 +115,56 @@ ALTER TABLE synthese ADD CONSTRAINT fk_synthese_id_source
     FOREIGN KEY (id_source) REFERENCES t_sources(id_source)
     ON UPDATE CASCADE ;
 
+\echo '-------------------------------------------------------------------------------'
+\echo 'Restore foreign keys constraints depending of GeoNature version'
+DO $$
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'gn_synthese'
+                AND table_name = 'synthese'
+                AND column_name='cd_hab'
+        ) IS TRUE THEN
+            RAISE NOTICE ' Restore foreign keys constraints on synthese.cd_hab"' ;
+            ALTER TABLE gn_synthese.synthese ADD CONSTRAINT fk_synthese_cd_hab
+            FOREIGN KEY (cd_hab) REFERENCES ref_habitats.habref(cd_hab)
+            ON UPDATE CASCADE ;
+        ELSE
+      		RAISE NOTICE ' GeoNature <= v2.4.1 => column "cd_hab" not exists on table "gn_synthese.synthese" !' ;
+        END IF ;
+
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'gn_synthese'
+                AND table_name = 'synthese'
+                AND column_name='id_nomenclature_biogeo_status'
+        ) IS TRUE THEN
+            RAISE NOTICE ' Restore foreign keys constraints on synthese.id_nomenclature_biogeo_status"' ;
+            ALTER TABLE gn_synthese.synthese ADD CONSTRAINT fk_synthese_id_nomenclature_biogeo_status
+            FOREIGN KEY (id_nomenclature_biogeo_status) REFERENCES ref_nomenclatures.t_nomenclatures(id_nomenclature)
+            ON UPDATE CASCADE ;
+        ELSE
+      		RAISE NOTICE ' GeoNature <= v2.5.2 => column "id_nomenclature_biogeo_status" not exists on table "gn_synthese.synthese" !' ;
+        END IF ;
+
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'gn_synthese'
+                AND table_name = 'synthese'
+                AND column_name='id_nomenclature_obs_meth'
+        ) IS TRUE THEN
+            RAISE NOTICE ' Restore foreign keys constraints on synthese.id_nomenclature_obs_meth"' ;
+            ALTER TABLE synthese ADD CONSTRAINT fk_synthese_id_nomenclature_obs_meth
+            FOREIGN KEY (id_nomenclature_obs_meth) REFERENCES ref_nomenclatures.t_nomenclatures(id_nomenclature)
+            ON UPDATE CASCADE ;
+        ELSE
+      		RAISE NOTICE ' GeoNature >= v2.5.0 => column "id_nomenclature_obs_meth" not exists on table "gn_synthese.synthese" !' ;
+        END IF ;
+    END
+$$ ;
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Restore other constraints on synthese'
@@ -188,13 +235,6 @@ ALTER TABLE synthese ADD CONSTRAINT check_synthese_obj_count
         ref_nomenclatures.check_nomenclature_type_by_mnemonique(
             id_nomenclature_obj_count,
             'OBJ_DENBR'::character varying
-        )
-    ) NOT VALID ;
-ALTER TABLE synthese ADD CONSTRAINT check_synthese_obs_meth
-    CHECK (
-        ref_nomenclatures.check_nomenclature_type_by_mnemonique(
-            id_nomenclature_obs_meth,
-            'METH_OBS'::character varying
         )
     ) NOT VALID ;
 ALTER TABLE synthese ADD CONSTRAINT check_synthese_obs_technique
@@ -281,6 +321,64 @@ ALTER TABLE synthese ADD CONSTRAINT unique_id_sinp_unique
 
 
 \echo '-------------------------------------------------------------------------------'
+\echo 'Restore other constraints depending of GeoNature version'
+DO $$
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'gn_synthese'
+                AND table_name = 'synthese'
+                AND column_name='depth_max'
+        ) IS TRUE THEN
+            RAISE NOTICE ' Restore check constraints on synthese.depth_max"' ;
+            ALTER TABLE gn_synthese.synthese ADD CONSTRAINT check_synthese_depth_max
+            CHECK ((depth_max >= depth_min)) ;
+        ELSE
+      		RAISE NOTICE ' GeoNature <= v2.4.1 => column "depth_max" not exists on table "gn_synthese.synthese" !' ;
+        END IF ;
+
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'gn_synthese'
+                AND table_name = 'synthese'
+                AND column_name='id_nomenclature_biogeo_status'
+        ) IS TRUE THEN
+            RAISE NOTICE ' Restore check constraint on synthese.id_nomenclature_biogeo_status"' ;
+            ALTER TABLE gn_synthese.synthese ADD CONSTRAINT check_synthese_biogeo_status
+            CHECK (
+                ref_nomenclatures.check_nomenclature_type_by_mnemonique(
+                    id_nomenclature_biogeo_status,
+                    'STAT_BIOGEO'::character varying
+                )
+            ) NOT VALID ;
+        ELSE
+      		RAISE NOTICE ' GeoNature <= v2.5.2 => column "id_nomenclature_biogeo_status" not exists on table "gn_synthese.synthese" !' ;
+        END IF ;
+
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'gn_synthese'
+                AND table_name = 'synthese'
+                AND column_name='id_nomenclature_obs_meth'
+        ) IS TRUE THEN
+            RAISE NOTICE ' Restore foreign keys constraints on synthese.id_nomenclature_obs_meth"' ;
+            ALTER TABLE synthese ADD CONSTRAINT check_synthese_obs_meth
+            CHECK (
+                ref_nomenclatures.check_nomenclature_type_by_mnemonique(
+                    id_nomenclature_obs_meth,
+                    'METH_OBS'::character varying
+                )
+            ) NOT VALID ;
+        ELSE
+      		RAISE NOTICE ' GeoNature >= v2.5.0 => column "id_nomenclature_obs_meth" not exists on table "gn_synthese.synthese" !' ;
+        END IF ;
+    END
+$$ ;
+
+\echo '-------------------------------------------------------------------------------'
 \echo 'Restore indexes on "synthese" BEFORE others triggers actions'
 CREATE INDEX IF NOT EXISTS i_synthese_altitude_max ON synthese USING btree(altitude_max) ;
 CREATE INDEX IF NOT EXISTS i_synthese_altitude_min ON synthese USING btree(altitude_min) ;
@@ -317,7 +415,7 @@ DO $$
             RAISE NOTICE ' Replay actions on table "synthese" (trg_refresh_taxons_forautocomplete)' ;
 
             RAISE NOTICE '  Clean table taxons_synthese_autocomplete' ;
-            TRUNCATE TABLE taxons_synthese_autocomplete;
+            TRUNCATE TABLE taxons_synthese_autocomplete ;
 
             RAISE NOTICE '  Reinsert scientific names in table taxons_synthese_autocomplete' ;
             INSERT INTO taxons_synthese_autocomplete
@@ -399,26 +497,80 @@ INSERT INTO cor_area_synthese
 
 
 \echo '-------------------------------------------------------------------------------'
-\echo 'Replay actions on table "cor_area_taxon" (play after cor_area_synthese trigger)'
+\echo 'For GeoNature < v2.6.0, replay actions on table "cor_area_taxon" (play after cor_area_synthese trigger)'
+DO $$
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.tables
+            WHERE table_schema = 'gn_synthese'
+                AND table_name = 'cor_area_taxon'
+        ) IS TRUE THEN
+            RAISE NOTICE ' Clean table cor_area_taxon' ;
+            TRUNCATE TABLE cor_area_taxon ;
+            -- TO AVOID TRUNCATE : add condition on id_source or id_dataset to reduce synthese table entries in below insert
 
-\echo ' Clean table cor_area_taxon'
-TRUNCATE TABLE cor_area_taxon ;
--- TO AVOID TRUNCATE : add condition on id_source or id_dataset to reduce synthese table entries in below insert
-
-\echo ' Reinsert all data in cor_area_taxon'
-INSERT INTO cor_area_taxon (id_area, cd_nom, last_date, nb_obs)
-    SELECT cor.id_area, s.cd_nom, MAX(s.date_min) AS last_date, COUNT(s.id_synthese) AS nb_obs
-    FROM cor_area_synthese AS cor
-        JOIN synthese AS s
-            ON (s.id_synthese = cor.id_synthese)
-    GROUP BY cor.id_area, s.cd_nom ;
+            RAISE NOTICE ' Reinsert all data in cor_area_taxon' ;
+            INSERT INTO cor_area_taxon (id_area, cd_nom, last_date, nb_obs)
+                SELECT cor.id_area, s.cd_nom, MAX(s.date_min) AS last_date, COUNT(s.id_synthese) AS nb_obs
+                FROM cor_area_synthese AS cor
+                    JOIN synthese AS s
+                        ON (s.id_synthese = cor.id_synthese)
+                GROUP BY cor.id_area, s.cd_nom ;
+        ELSE
+      		RAISE NOTICE ' GeoNature > v2.5.5 => table "gn_synthese.cor_area_taxon" not exists !' ;
+        END IF ;
+    END
+$$ ;
 
 
 \echo '-------------------------------------------------------------------------------'
-\echo 'Enable all triggers after replayed their actions'
+\echo 'For GeoNature > v2.5.5, replay action calculate sensitivity'
+DO $$
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM pg_trigger
+            WHERE tgname = 'tri_insert_calculate_sensitivity'
+        ) IS TRUE THEN
+            RAISE NOTICE ' For GeoNature > v2.5.5, replay "tri_insert_calculate_sensitivity" action' ;
+            WITH cte AS (
+                SELECT
+                    gn_sensitivity.get_id_nomenclature_sensitivity(
+                        inserted_rows.date_min::date,
+                        taxonomie.find_cdref(inserted_rows.cd_nom),
+                        inserted_rows.the_geom_local,
+                        ('{"STATUT_BIO": ' || inserted_rows.id_nomenclature_bio_status::text || '}')::jsonb
+                    ) AS id_nomenclature_sensitivity,
+                    id_synthese,
+                    t_diff.cd_nomenclature AS cd_nomenclature_diffusion_level
+                FROM gn_synthese.synthese AS inserted_rows
+                    LEFT JOIN ref_nomenclatures.t_nomenclatures AS t_diff
+                    ON t_diff.id_nomenclature = inserted_rows.id_nomenclature_diffusion_level
+                WHERE inserted_rows.id_nomenclature_sensitivity IS NULL
+            )
+            UPDATE gn_synthese.synthese AS s
+            SET
+                id_nomenclature_sensitivity = c.id_nomenclature_sensitivity,
+                id_nomenclature_diffusion_level = ref_nomenclatures.get_id_nomenclature(
+                    'NIV_PRECIS',
+                    gn_sensitivity.calculate_cd_diffusion_level(
+                        c.cd_nomenclature_diffusion_level,
+                        t_sensi.cd_nomenclature
+                    )
+                )
+            FROM cte AS c
+                LEFT JOIN ref_nomenclatures.t_nomenclatures AS t_sensi
+                    ON t_sensi.id_nomenclature = c.id_nomenclature_sensitivity
+            WHERE c.id_synthese = s.id_synthese ;
+        ELSE
+      		RAISE NOTICE ' GeoNature < v2.6.0 => no replay action !' ;
+        END IF ;
+    END
+$$ ;
 
-\echo ' Enable "tri_maj_cor_area_taxon" trigger'
-ALTER TABLE cor_area_synthese ENABLE TRIGGER tri_maj_cor_area_taxon ;
+\echo '-------------------------------------------------------------------------------'
+\echo 'Enable all triggers after replayed their actions'
 
 \echo ' Enable "tri_meta_dates_change_synthese" trigger'
 ALTER TABLE synthese ENABLE TRIGGER tri_meta_dates_change_synthese ;
@@ -426,21 +578,73 @@ ALTER TABLE synthese ENABLE TRIGGER tri_meta_dates_change_synthese ;
 \echo ' Enable "tri_insert_cor_area_synthese" trigger'
 ALTER TABLE synthese ENABLE TRIGGER tri_insert_cor_area_synthese ;
 
-\echo ' Enable "tri_update_cor_area_taxon_update_cd_nom" trigger'
-ALTER TABLE synthese ENABLE TRIGGER tri_update_cor_area_taxon_update_cd_nom ;
 
-
-\echo '-------------------------------------------------------------------------------'
-\echo 'For GeoNature v2.3.2 and below handle table "gn_synthese.taxons_synthese_autocomplete"'
+\echo '----------------------------------------------------------------------------'
+\echo 'Enable triggers depending of GeoNature version'
 DO $$
     BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM pg_trigger
+            WHERE tgname = 'tri_maj_cor_area_taxon'
+        ) IS TRUE THEN
+            RAISE NOTICE ' For GeoNature < v2.6.0, enable "tri_maj_cor_area_taxon" trigger' ;
+            ALTER TABLE cor_area_synthese ENABLE TRIGGER tri_maj_cor_area_taxon ;
+        ELSE
+      		RAISE NOTICE ' GeoNature > v2.5.5 => trigger "tri_maj_cor_area_taxon" not exists !' ;
+        END IF ;
+
+        IF EXISTS (
+            SELECT 1
+            FROM pg_trigger
+            WHERE tgname = 'tri_update_cor_area_taxon_update_cd_nom'
+        ) IS TRUE THEN
+            RAISE NOTICE ' For GeoNature < v2.6.0, enable "tri_update_cor_area_taxon_update_cd_nom" trigger' ;
+            ALTER TABLE synthese ENABLE TRIGGER tri_update_cor_area_taxon_update_cd_nom ;
+        ELSE
+      		RAISE NOTICE ' GeoNature > v2.5.5 => trigger "tri_update_cor_area_taxon_update_cd_nom" not exists !' ;
+        END IF ;
+
+        IF EXISTS (
+            SELECT 1
+            FROM pg_trigger
+            WHERE tgname = 'tri_update_cor_area_synthese'
+        ) IS TRUE THEN
+            RAISE NOTICE ' For GeoNature > v2.5.5, enable trigger "tri_update_cor_area_synthese"' ;
+            ALTER TABLE synthese ENABLE TRIGGER tri_update_cor_area_synthese ;
+        ELSE
+      		RAISE NOTICE ' GeoNature < v2.6.0 => trigger "tri_update_cor_area_synthese" not exists !' ;
+        END IF ;
+
+        IF EXISTS (
+            SELECT 1
+            FROM pg_trigger
+            WHERE tgname = 'tri_insert_calculate_sensitivity'
+        ) IS TRUE THEN
+            RAISE NOTICE ' For GeoNature > v2.5.5, enable trigger "tri_insert_calculate_sensitivity"' ;
+            ALTER TABLE synthese ENABLE TRIGGER tri_insert_calculate_sensitivity ;
+        ELSE
+      		RAISE NOTICE ' GeoNature < v2.6.0 => trigger "tri_insert_calculate_sensitivity" not exists !' ;
+        END IF ;
+
+        IF EXISTS (
+            SELECT 1
+            FROM pg_trigger
+            WHERE tgname = 'tri_update_calculate_sensitivity'
+        ) IS TRUE THEN
+            RAISE NOTICE ' For GeoNature > v2.5.5, enable trigger "tri_update_calculate_sensitivity"' ;
+            ALTER TABLE synthese ENABLE TRIGGER tri_update_calculate_sensitivity ;
+        ELSE
+      		RAISE NOTICE ' GeoNature < v2.6.0 => trigger "tri_update_calculate_sensitivity" not exists !' ;
+        END IF ;
+
         IF EXISTS (
             SELECT 1
             FROM information_schema.tables
             WHERE table_schema = 'gn_synthese'
                 AND table_name = 'taxons_synthese_autocomplete'
         ) IS TRUE THEN
-            RAISE NOTICE ' Enable synthese trigger "trg_refresh_taxons_forautocomplete"' ;
+            RAISE NOTICE 'For GeoNature < v2.3.2, enable "trg_refresh_taxons_forautocomplete"' ;
             ALTER TABLE synthese ENABLE TRIGGER trg_refresh_taxons_forautocomplete ;
         ELSE
       		RAISE NOTICE ' GeoNature > v2.3.2 => table "gn_synthese.taxons_synthese_autocomplete" not exists !' ;
