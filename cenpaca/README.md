@@ -34,17 +34,31 @@ dossier contenant les fichiers `.csv` du format d'échange et lancer la commande
 tar jcvf ../2021-02-21_sinp_paca_cenpaca.tar.bz2 .
 ```
 
-## Extraction de lignes d'un fichier
+## Commandes appliquées
+### Fichier synthese.csv export 2021-02-21_sinp_paca_cenpaca
+```
+# Suppression des tabulation présentes dans les valeurs des champs :
+sed -i 's#BENCE Stéphane\t\tpointage#BENCE Stéphane\tpointage#g' synthese.csv
+sed -i 's#BENCE Stéphane\ti\tpointage#BENCE Stéphane\tpointage#g' synthese.csv
+sed -i 's#Vallon de la Maline\t\tSRID=2154#Vallon de la Maline\tSRID=2154#g' synthese.csv
+sed -i 's#avec \tCORENTIN Yves#avec CORENTIN Yves#g' synthese.csv
 
-L'ouverture du fichier `synthese.csv` dans un éditeur de texte peut poser
-problème contenu de sa taille.
-Il est possible d'extraire un nombre réduit de lignes du début du fichier 
-à l'aide de la commande suivante :
-```
-head -1000 synthese.csv > synthese.extract.csv
-```
-Pour extraire des lignes de la fin du fichier, utiliser la commande
-:
-```
-tail -1000 synthese.csv > synthese.extract_end.csv
+sed -i 's#BENCE Stéphane\tavec \tLEMARCHAND Cécile#BENCE Stéphane\tavec LEMARCHAND Cécile#g' synthese.csv
+sed -i 's#BENCE Stéphane\tavec\tLEMARCHAND Cécile#BENCE Stéphane\tavec LEMARCHAND Cécile#g' synthese.csv
+sed -i 's#BENCE Stéphane\tavec\tSCOFFIER Stéphanie#BENCE Stéphane\tavec SCOFFIER Stéphanie#g' synthese.csv
+sed -i 's#BENCE Stéphane\t\tIBAñEZ Damien#BENCE Stéphane\tIBAñEZ Damien#g' synthese.csv
+sed -i 's#BENCE Stéphane\tavec \tPELISSIER Robert#BENCE Stéphane\tavec PELISSIER Robert#g' synthese.csv
+
+# Caractères UTF-8 mal encodé
+sed -i 's#\x1A#_#g' synthese.csv
+
+# Protection des guillemets doubles
+sed -i 's#"#""#g' synthese.csv
+
+# Remplacement des caractères NULL mal formé
+sed -i 's#\tN\t#\t\\N\t#g' synthese.csv
+
+# Suppression des caractères de fin de ligne présents dans les valeurs des champs :
+sed -i -z 's/\n\r\n//g' synthese.csv
+sed -i -z 's/\r\n//g' synthese.csv
 ```

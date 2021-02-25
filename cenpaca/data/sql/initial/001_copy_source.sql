@@ -10,25 +10,25 @@ SET search_path = gn_synthese;
 
 
 \echo '-------------------------------------------------------------------------------'
-\echo 'Remove "temp_sources" table if already exists'
-DROP TABLE IF EXISTS temp_sources ;
+\echo 'Remove "tmp_sources" table if already exists'
+DROP TABLE IF EXISTS tmp_sources ;
 
 
 \echo '-------------------------------------------------------------------------------'
-\echo 'Create "temp_sources" table from "t_sources"'
-CREATE TABLE temp_sources AS
+\echo 'Create "tmp_sources" table from "t_sources"'
+CREATE TABLE tmp_sources AS
 TABLE t_sources
 WITH NO DATA ;
 
 
 \echo '-------------------------------------------------------------------------------'
-\echo 'Attribute "temp_sources" to GeoNature DB owner'
-ALTER TABLE temp_sources OWNER TO :gnDbOwner ;
+\echo 'Attribute "tmp_sources" to GeoNature DB owner'
+ALTER TABLE tmp_sources OWNER TO :gnDbOwner ;
 
 
 \echo '-------------------------------------------------------------------------------'
-\echo 'Copy CVS file to temp_sources'
-COPY temp_sources (
+\echo 'Copy CVS file to tmp_sources'
+COPY tmp_sources (
     name_source,
     desc_source,
     entity_source_pk_field,
@@ -41,7 +41,7 @@ WITH CSV HEADER DELIMITER E'\t' NULL '\N' ;
 
 
 \echo '-------------------------------------------------------------------------------'
-\echo 'Copy "temp_sources" data to "t_sources" if not exist'
+\echo 'Copy "tmp_sources" data to "t_sources" if not exist'
 INSERT INTO t_sources(
     name_source,
     desc_source,
@@ -57,7 +57,7 @@ SELECT
     url_source,
     meta_create_date,
     meta_update_date
-FROM temp_sources AS tmp
+FROM tmp_sources AS tmp
 WHERE NOT EXISTS (
     SELECT 'X'
     FROM t_sources AS ts

@@ -66,12 +66,17 @@ function main() {
 
     #+----------------------------------------------------------------------------------------------------------+
     # Start script
-    printInfo "CEN-PACA test dataset import script started at: ${fmt_time_start}"
+    printInfo "CEN-PACA dataset import script started at: ${fmt_time_start}"
 
     downloadCenpacaDataArchive
     extractArchive
-    addMetaData
+    prepareDb
     insertSource
+    insertOrganism
+    insertUser
+    insertAcquisitionFramework
+    insertDataset
+    prepareSynthese
     insertSynthese
     maintainDb
 
@@ -81,7 +86,7 @@ function main() {
 }
 
 function downloadCenpacaDataArchive() {
-    printMsg "Downloading CEN-PACA test data 2020-02-13 archive..."
+    printMsg "Downloading CEN-PACA data archive..."
 
     if [[ ! -f "${raw_dir}/${cp_filename_archive}" ]]; then
         curl -X POST https://content.dropboxapi.com/2/files/download \
@@ -106,14 +111,19 @@ function extractArchive() {
     fi
 }
 
-function addMetaData() {
-    # TODO: instead of sql file use import-parser with several CSV files
-    printMsg "Inserting metadata into GeoNature database..."
-
+function prepareDb() {
+    printMsg "Inserting utils functions into GeoNature database..."
     export PGPASSWORD="${db_pass}"; \
         psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -f "${sql_dir}/initial/001_initialize_meta.sql"
+            -f "${sql_shared_dir}/utils_functions.sql"
+
+    printMsg "Inserting missing data into GeoNature database..."
+    checkSuperuser
+    sudo -n -u "${pg_admin_name}" -s \
+        psql -d "${db_name}" \
+            -f "${sql_dir}/initial/000_prepare_db.sql"
 }
+
 
 function insertSource() {
     local csv_to_import="${cp_filename_source%.csv}_rti.csv"
@@ -129,13 +139,105 @@ function insertSource() {
         printVerbose "SOURCE CSV file already parsed." ${Gra}
     fi
 
-    printMsg "Inserting sources data into GeoNature database..."
+    printMsg "Inserting SOURCE data into GeoNature database..."
     checkSuperuser
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
             -v gnDbOwner="${db_user}" \
             -v csvFilePath="${raw_dir}/${csv_to_import}" \
-            -f "${sql_dir}/initial/002_copy_source.sql"
+            -f "${sql_dir}/initial/001_copy_source.sql"
+}
+
+function insertOrganism() {
+    local csv_to_import="${cp_filename_organism%.csv}_rti.csv"
+
+    printMsg "Parsing ORGANISM CSV file..."
+    if [[ ! -f "${raw_dir}/${csv_to_import}" ]]; then
+        cd "${root_dir}/import-parser/"
+        pipenv run python ./bin/gn_import_parser.py \
+            --type "o" \
+            --config "${conf_dir}/parser_actions.ini" \
+            "${raw_dir}/${cp_filename_organism}"
+    else
+        printVerbose "ORGANISM CSV file already parsed." ${Gra}
+    fi
+
+    printMsg "Inserting ORGANISM data into GeoNature database..."
+    checkSuperuser
+    sudo -n -u "${pg_admin_name}" -s \
+        psql -d "${db_name}" \
+            -v gnDbOwner="${db_user}" \
+            -v csvFilePath="${raw_dir}/${csv_to_import}" \
+            -f "${sql_dir}/initial/002_copy_organism.sql"
+}
+
+function insertUser() {
+    local csv_to_import="${cp_filename_user%.csv}_rti.csv"
+
+    printMsg "Parsing USER CSV file..."
+    if [[ ! -f "${raw_dir}/${csv_to_import}" ]]; then
+        cd "${root_dir}/import-parser/"
+        pipenv run python ./bin/gn_import_parser.py \
+            --type "u" \
+            --config "${conf_dir}/parser_actions.ini" \
+            "${raw_dir}/${cp_filename_user}"
+    else
+        printVerbose "USER CSV file already parsed." ${Gra}
+    fi
+
+    printMsg "Inserting USER data into GeoNature database..."
+    checkSuperuser
+    sudo -n -u "${pg_admin_name}" -s \
+        psql -d "${db_name}" \
+            -v gnDbOwner="${db_user}" \
+            -v csvFilePath="${raw_dir}/${csv_to_import}" \
+            -f "${sql_dir}/initial/003_copy_user.sql"
+}
+
+function insertAcquisitionFramework() {
+    local csv_to_import="${cp_filename_af%.csv}_rti.csv"
+
+    printMsg "Parsing ACQUISITION FRAMEWORK CSV file..."
+    if [[ ! -f "${raw_dir}/${csv_to_import}" ]]; then
+        cd "${root_dir}/import-parser/"
+        pipenv run python ./bin/gn_import_parser.py \
+            --type "af" \
+            --config "${conf_dir}/parser_actions.ini" \
+            "${raw_dir}/${cp_filename_af}"
+    else
+        printVerbose "ACQUISITION FRAMEWORK CSV file already parsed." ${Gra}
+    fi
+
+    printMsg "Inserting ACQUISITION FRAMEWORK data into GeoNature database..."
+    checkSuperuser
+    sudo -n -u "${pg_admin_name}" -s \
+        psql -d "${db_name}" \
+            -v gnDbOwner="${db_user}" \
+            -v csvFilePath="${raw_dir}/${csv_to_import}" \
+            -f "${sql_dir}/initial/004_copy_acquisition_framework.sql"
+}
+
+function insertDataset() {
+    local csv_to_import="${cp_filename_dataset%.csv}_rti.csv"
+
+    printMsg "Parsing DATASET CSV file..."
+    if [[ ! -f "${raw_dir}/${csv_to_import}" ]]; then
+        cd "${root_dir}/import-parser/"
+        pipenv run python ./bin/gn_import_parser.py \
+            --type "d" \
+            --config "${conf_dir}/parser_actions.ini" \
+            "${raw_dir}/${cp_filename_dataset}"
+    else
+        printVerbose "DATASET CSV file already parsed." ${Gra}
+    fi
+
+    printMsg "Inserting DATASET data into GeoNature database..."
+    checkSuperuser
+    sudo -n -u "${pg_admin_name}" -s \
+        psql -d "${db_name}" \
+            -v gnDbOwner="${db_user}" \
+            -v csvFilePath="${raw_dir}/${csv_to_import}" \
+            -f "${sql_dir}/initial/005_copy_dataset.sql"
 }
 
 function prepareSynthese() {
@@ -147,7 +249,7 @@ function prepareSynthese() {
     printMsg "Deleting previously loaded synthese data with this sources..."
     export PGPASSWORD="${db_pass}"; \
         psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -f "${sql_dir}/initial/003_prepare_synthese.sql"
+            -f "${sql_dir}/initial/006_prepare_synthese.sql"
 
     printMsg "Restoring GeoNature database after deleting data into syntese table ..."
     export PGPASSWORD="${db_pass}"; \
@@ -180,7 +282,7 @@ function insertSynthese() {
     sudo -n -u "${pg_admin_name}" -s \
         psql -d "${db_name}" \
             -v csvFilePath="${raw_dir}/${csv_to_import}" \
-            -f "${sql_dir}/initial/004_copy_synthese.sql"
+            -f "${sql_dir}/initial/007_copy_synthese.sql"
 
     printMsg "Restoring GeoNature database after inserting data into syntese table ..."
     checkSuperuser
