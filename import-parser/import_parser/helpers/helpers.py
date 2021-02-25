@@ -6,6 +6,7 @@ import uuid
 from helpers.config import Config
 
 
+# TODO: see why click echo with color don't work !
 def print_msg(msg):
     click.echo(click.style(msg, fg='yellow'))
 

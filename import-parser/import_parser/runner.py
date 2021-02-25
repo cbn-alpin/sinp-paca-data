@@ -58,10 +58,10 @@ def parse_file(filename, import_type, actions_config_file):
     organisms or users linked data.
 
     This script produce new files suffixed by '_rti' (ready to import) where all codes were replaced by integers
-    identifiers specific to an GeoNature 2 database.
+    identifiers specific to a GeoNature 2 database.
 
     Each import files must follow a specific format describe in this SINP Wiki :
-    https://wiki-sinp.cbn-alpin.fr/database/exemple-import-synthese
+    https://wiki-sinp.cbn-alpin.fr/database/import-formats
 
     Access to the GeoNature database must be configured in 'shared/config/settings.ini' file.
     """
@@ -77,8 +77,17 @@ def parse_file(filename, import_type, actions_config_file):
     click.echo('Source filename:' + filename_src)
     click.echo('Destination filename:' + filename_dest)
     click.echo('Type:' + import_type)
+    click.echo('Remove columns ? ' + str(Config.get('actions.remove_columns')))
+    click.echo('Columns to remove: ' + ', '.join(Config.get('actions.remove_columns.params')))
 
-    csv.register_dialect('sql_copy', delimiter='\t', quotechar='', escapechar='', quoting=csv.QUOTE_NONE)
+    csv.register_dialect(
+        'sql_copy',
+        delimiter='\t',
+        quotechar='',
+        escapechar='',
+        quoting=csv.QUOTE_NONE,
+        lineterminator="\n"
+    )
 
     # Access to the database if necessary
     db_access_need = set(['s', 'u', 'af', 'd'])
@@ -106,12 +115,19 @@ def parse_file(filename, import_type, actions_config_file):
     # Open CSV files
     with open(filename_src, 'r', newline='', encoding='utf-8') as f_src:
         total_csv_lines_nbr = calculate_csv_entries_number(f_src)
+        # TODO: add an option to analyse number of tabulation by lines
+        # TODO: create a class to manage reports
+        # TODO: use a template (JINJA ?) to render reports
         reports = {
             'lines_removed_total': 0,
             'sciname_removed_lines': {},
-            'dataset_removed_lines': {},
             'date_missing_removed_lines': [],
             'date_max_removed_lines': [],
+            'source_code_unknown_lines': {},
+            'dataset_code_unknown_lines': {},
+            'nomenclature_code_unknown_lines': {},
+            'altitude_min_fixed_lines': [],
+            'altitude_max_fixed_lines': [],
         }
 
         reader = csv.DictReader(f_src, dialect='sql_copy')
@@ -121,6 +137,7 @@ def parse_file(filename, import_type, actions_config_file):
             writer = csv.DictWriter(f_dest, dialect='sql_copy', fieldnames=fieldnames)
             writer.writeheader()
 
+            # TODO: see why progressbar don't work !
             with click.progressbar(length=int(total_csv_lines_nbr), label="Parsing lines", show_pos=True) as pbar:
                 try:
                     for row in reader:
@@ -131,7 +148,7 @@ def parse_file(filename, import_type, actions_config_file):
                         # else there is a tab in fields value !
 
                         # Remove useless columns
-                        row = remove_columns(row)
+                        row = remove_columns(row, reader)
 
                         # Add new columns if necessary
                         row = add_columns(row)
@@ -144,61 +161,39 @@ def parse_file(filename, import_type, actions_config_file):
                             row = add_uuid_obs(row)
 
                             # Check Sciname code
-                            if check_sciname_code(row, scinames_codes) == False:
+                            if check_sciname_code(row, scinames_codes, reader, reports) == False:
                                 write_row = False
                                 print_error(f"Line {reader.line_num} removed, sciname code {row['cd_nom']} not exists in TaxRef !")
-                                reports['lines_removed_total'] += 1
-                                report_value = get_report_field_value(row, reader)
-                                (
-                                    reports['sciname_removed_lines']
-                                    .setdefault(str(row['cd_nom']), [])
-                                    .append(report_value)
-                                )
-
-                            # Check Dataset code
-                            if check_dataset_code(row, datasets) == False:
-                                write_row = False
-                                print_error(f"Line {reader.line_num} removed, dataset code {row['code_dataset']} not exists !")
-                                reports['lines_removed_total'] += 1
-                                report_value = get_report_field_value(row, reader)
-                                (
-                                    reports['dataset_removed_lines']
-                                    .setdefault(str(row['code_dataset']), [])
-                                    .append(report_value)
-                                )
 
                             # Check date_min and date_max
-                            if check_dates(row) == False:
+                            if check_dates(row, reader, reports) == False:
                                 write_row = False
                                 print_error(f"Line {reader.line_num} removed, mandatory dates missing !")
-                                reports['lines_removed_total'] += 1
-                                report_value = get_report_field_value(row, reader)
-                                reports['date_missing_removed_lines'].append(report_value)
-                            elif check_date_max_greater_than_min(row) == False:
+                            elif check_date_max_greater_than_min(row, reader, reports) == False:
                                 write_row = False
                                 print_error(f"Line {reader.line_num} removed, date max not greater than date min !")
-                                reports['lines_removed_total'] += 1
-                                report_value = get_report_field_value(row, reader)
-                                reports['date_max_removed_lines'].append(report_value)
 
                             if write_row != False:
+                                # Fix altitudes
+                                row = fix_altitude_min(row, reader, reports)
+                                row = fix_altitude_max(row, reader, reports)
                                 # Replace Dataset Code
-                                row = replace_code_dataset(row, datasets)
+                                row = replace_code_dataset(row, datasets, reader, reports)
                                 # Replace Module Code
                                 row = replace_code_module(row, modules)
                                 # Replace Source Code
-                                row = replace_code_source(row, sources)
+                                row = replace_code_source(row, sources, reader, reports)
                                 # Replace Nomenclatures Codes
-                                row = replace_code_nomenclature(row, nomenclatures)
+                                row = replace_code_nomenclature(row, nomenclatures, reader, reports)
                         elif import_type == 'u':
                             # Replace Organism Code
                             row = replace_code_organism(row, organisms)
                         elif import_type == 'af':
                             # Replace Nomenclatures Codes
-                            row = replace_code_nomenclature(row, nomenclatures)
+                            row = replace_code_nomenclature(row, nomenclatures, reader, reports)
                         elif import_type == 'd':
                             # Replace Nomenclatures Codes
-                            row = replace_code_nomenclature(row, nomenclatures)
+                            row = replace_code_nomenclature(row, nomenclatures, reader, reports)
                             row = replace_code_acquisition_framework(row, acquisition_frameworks)
 
                         # Write in destination file
@@ -212,35 +207,64 @@ def parse_file(filename, import_type, actions_config_file):
                     sys.exit(f'Error in file {filename}, line {reader.line_num}: {e}')
     # Report
     if import_type == 's' :
-        print_msg('Lines removed')
-        print_info(f"   Total: {reports['lines_removed_total']: }")
+        print_msg(f"Total lines removed: {reports['lines_removed_total']: }")
+        print_info('-'*72)
 
-        print_info(f'   List of removed lines with unkown scinames codes:')
-        for key in reports['sciname_removed_lines']:
-            grouped_removed_lines = list(find_ranges(reports['sciname_removed_lines'][key]))
-            removed_lines_to_print = []
-            for line_group in grouped_removed_lines:
-                if (line_group[0] == line_group[1]):
-                    removed_lines_to_print.append(str(line_group[0]))
-                else:
-                    removed_lines_to_print.append(str(line_group[0]) + '-' + str(line_group[1]))
-            print_info(f"       #{key}: {', '.join(removed_lines_to_print)}")
-
-        print_info(f'   List of removed lines with unkown dataset codes:')
         total = 0
-        for lines, dataset_code in reports['dataset_removed_lines'].items():
-            print_info(f"       #{dataset_code}: {', '.join(lines)}")
+        lines_to_print = []
+        for sciname, lines in reports['sciname_removed_lines'].items():
+            lines_to_print.append(f"       {sciname}: {', '.join(lines)}")
             total += len(lines)
-        print_info(f"       Total: {total}")
+        print_info(f'   List of {total} removed lines with unknown scinames codes:')
+        print_info('\n'.join(lines_to_print))
+        print_info('-'*72)
 
         total = len(reports['date_missing_removed_lines'])
         print_info(f'   List of {total} removed lines with missing date min or max:')
-        print_info(f"       #{', '.join(reports['date_missing_removed_lines'])}")
+        print_info(f"       {', '.join(reports['date_missing_removed_lines'])}")
+        print_info('-'*72)
 
         total = len(reports['date_max_removed_lines'])
         print_info(f'   List of {total} removed lines with date max not greater than date min:')
-        print_info(f"       #{', '.join(reports['date_max_removed_lines'])}")
+        print_info(f"       {', '.join(reports['date_max_removed_lines'])}")
+        print_info('-'*72)
 
+        total = 0
+        lines_to_print = []
+        for dataset_code, lines in reports['dataset_code_unknown_lines'].items():
+            lines_to_print.append(f"       {dataset_code}: {', '.join(lines)}")
+            total += len(lines)
+        print_info(f'   List of {total} lines with unknown dataset codes:')
+        print_info('\n'.join(lines_to_print))
+        print_info('-'*72)
+
+        total = 0
+        lines_to_print = []
+        for type_and_code, lines in reports['nomenclature_code_unknown_lines'].items():
+            lines_to_print.append(f"       {type_and_code}: {', '.join(lines)}")
+            total += len(lines)
+        print_info(f'   List of {total} lines with unknown nomenclature codes:')
+        print_info('\n'.join(lines_to_print))
+        print_info('-'*72)
+
+        total = 0
+        lines_to_print = []
+        for code, lines in reports['source_code_unknown_lines'].items():
+            lines_to_print.append(f"       {code}: {', '.join(lines)}")
+            total += len(lines)
+        print_info(f'   List of {total} lines with unkown source codes:')
+        print_info('\n'.join(lines_to_print))
+        print_info('-'*72)
+
+        total = len(reports['altitude_min_fixed_lines'])
+        print_info(f'   List of {total} lines with altitude min fixed:')
+        print_info(f"       {', '.join(reports['altitude_min_fixed_lines'])}")
+        print_info('-'*72)
+
+        total = len(reports['altitude_max_fixed_lines'])
+        print_info(f'   List of {total} lines with altitude max fixed:')
+        print_info(f"       {', '.join(reports['altitude_max_fixed_lines'])}")
+        print_info('-'*72)
 
 
     # Script time elapsed
