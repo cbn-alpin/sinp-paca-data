@@ -465,9 +465,10 @@ $$ ;
 \echo '-------------------------------------------------------------------------------'
 \echo 'Replay actions on table "synthese" (tri_meta_dates_change_synthese)'
 
-\echo ' Update meta dates on "synthese"'
-UPDATE synthese SET meta_create_date = NOW() WHERE meta_create_date IS NULL ;
-UPDATE synthese SET meta_update_date = NOW() WHERE meta_update_date IS NULL ;
+\echo ' Update meta dates on "synthese" --> DO NOTHING !'
+-- WARNING : Don't update this meta date fields to for future update script !
+-- UPDATE synthese SET meta_create_date = NOW() WHERE meta_create_date IS NULL ;
+-- UPDATE synthese SET meta_update_date = NOW() WHERE meta_update_date IS NULL ;
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Replay actions on table "cor_area_synthese" (triggers on it must be disabled !)'
