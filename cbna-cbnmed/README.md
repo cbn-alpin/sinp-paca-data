@@ -31,20 +31,5 @@ L'archive au format d'échange doit être stocké sur Dropbox au niveau du dossi
 Elle doit être compressé au format `.tar.bz2` pour cela se placer dans le
 dossier contenant les fichiers `.csv` du format d'échange et lancer la commande :
 ```
-tar jcvf ../2021-02-10_sinp_paca_cbna-cbnmed.tar.bz2 .
-```
-
-## Extraction de lignes d'un fichier
-
-L'ouverture du fichier `synthese.csv` dans un éditeur de texte peut poser
-problème contenu de sa taille.
-Il est possible d'extraire un nombre réduit de lignes du début du fichier 
-à l'aide de la commande suivante :
-```
-head -1000 synthese.csv > synthese.extract.csv
-```
-Pour extraire des lignes de la fin du fichier, utiliser la commande
-:
-```
-tail -1000 synthese.csv > synthese.extract_end.csv
+tar jcvf ../2021-02-24_sinp_paca_cbna-cbnmed.tar.bz2 .
 ```

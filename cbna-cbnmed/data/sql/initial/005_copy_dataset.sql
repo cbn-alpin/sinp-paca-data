@@ -51,8 +51,8 @@ COPY tmp_datasets (
     bbox_east,
     bbox_south,
     bbox_north,
-    id_nomenclature_data_origin,
-    id_nomenclature_collecting_method,
+    id_nomenclature_data_origin,-- Interverted order with id_nomenclature_collecting_method
+    id_nomenclature_collecting_method,-- Interverted order with id_nomenclature_data_origin
     id_nomenclature_source_status,
     cor_territory,
     cor_actors_organism,

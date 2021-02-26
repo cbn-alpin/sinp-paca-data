@@ -547,7 +547,7 @@ DO $$
             RAISE NOTICE ' For GeoNature > v2.5.5, replay "tri_insert_calculate_sensitivity" action' ;
             WITH cte AS (
                 SELECT
-                    gn_sensitivity.get_id_nomenclature_sensitivity(
+                    gn_sensitivity.get_id_nomenclature_sensitivity (
                         inserted_rows.date_min::date,
                         taxonomie.find_cdref(inserted_rows.cd_nom),
                         inserted_rows.the_geom_local,

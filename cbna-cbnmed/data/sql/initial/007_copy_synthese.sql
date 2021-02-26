@@ -21,11 +21,11 @@ COPY synthese (
     id_nomenclature_bio_status,
     id_nomenclature_bio_condition,
     id_nomenclature_naturalness,
-    -- id_nomenclature_exist_proof, -- Errors in field values, remove for now !
+    id_nomenclature_exist_proof, -- Errors in field values, remove for now !
     id_nomenclature_valid_status,
     id_nomenclature_diffusion_level,
     id_nomenclature_life_stage,
-    --id_nomenclature_sex, -- Errors in field values, remove for now !
+    id_nomenclature_sex, -- Errors in field values, remove for now !
     id_nomenclature_obj_count,
     id_nomenclature_type_count,
     id_nomenclature_sensitivity,
@@ -59,7 +59,7 @@ COPY synthese (
     observers,
     determiner,
     id_digitiser,
-    -- id_nomenclature_determination_method, -- Errors in field values, remove for now !
+    id_nomenclature_determination_method, -- Errors in field values, remove for now !
     comment_context,
     comment_description,
     additional_data,
