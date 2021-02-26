@@ -49,16 +49,33 @@ sed -i 's#BENCE Stéphane\tavec\tSCOFFIER Stéphanie#BENCE Stéphane\tavec SCOFF
 sed -i 's#BENCE Stéphane\t\tIBAñEZ Damien#BENCE Stéphane\tIBAñEZ Damien#g' synthese.csv
 sed -i 's#BENCE Stéphane\tavec \tPELISSIER Robert#BENCE Stéphane\tavec PELISSIER Robert#g' synthese.csv
 
-# Caractères UTF-8 mal encodé
-sed -i 's#\x1A#_#g' synthese.csv
-
-# Protection des guillemets doubles
-sed -i 's#"#""#g' synthese.csv
-
-# Remplacement des caractères NULL mal formé
-sed -i 's#\tN\t#\t\\N\t#g' synthese.csv
-
 # Suppression des caractères de fin de ligne présents dans les valeurs des champs :
 sed -i -z 's/\n\r\n//g' synthese.csv
 sed -i -z 's/\r\n//g' synthese.csv
+
+# Protection des guillemets doubles
+# grep -P '[^"]"[^"]' > synthese.quote_err.csv
+sed -i 's#\([^"]\)"\([^"]\)#\1""\2#g' synthese.csv
+
+# Caractères UTF-8 mal encodé : respecter l'ordre des commandes !
+# grep -P '\x1A' > synthese.utf8_err.csv
+sed -i 's#Rh\x1Ane#Rhône#ig' synthese.csv
+sed -i 's#Moll\x1Ages#Mollèges#ig' synthese.csv
+sed -i 's#ne/\x1Ale d#ne/île d#g' synthese.csv
+sed -i 's#Pierre \x1A Feu#Pierre à Feu#g' synthese.csv
+sed -i 's#Domaine de la For\x1At#Domaine de la Forêt#g' synthese.csv
+sed -i 's#Bois Fran\x1Aois#Bois François#g' synthese.csv
+sed -i "s#/l'\x1Ale aux Castors#/l'île aux Castors#g" synthese.csv
+sed -i 's#L\x1Ane#Lône#g' synthese.csv
+sed -i 's#Ch\x1Ateau#Château#g' synthese.csv
+sed -i "s#L'\x1Alon blanc#L'îlon blanc#g" synthese.csv
+sed -i 's#la l\x1Ane de T#la lône de T#g' synthese.csv
+sed -i 's#Poulag\x1Are#Poulagère#g' synthese.csv
+sed -i 's#Vergi\x1Are#Vergière#g' synthese.csv
+sed -i 's#Pibouli\x1Are#Piboulière#g' synthese.csv
+sed -i 's#\x1A#é#g' synthese.csv
+
+# Remplacement des caractères NULL mal formé
+# grep -P '\tN\t' > synthese.null_err.csv
+sed -i 's#\tN\t#\t\\N\t#g' synthese.csv
 ```
