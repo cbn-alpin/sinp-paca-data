@@ -125,6 +125,7 @@ def parse_file(filename, import_type, actions_config_file):
             'date_max_removed_lines': [],
             'source_code_unknown_lines': {},
             'dataset_code_unknown_lines': {},
+            'organism_code_unknown_lines': {},
             'nomenclature_code_unknown_lines': {},
             'altitude_min_fixed_lines': [],
             'altitude_max_fixed_lines': [],
@@ -187,7 +188,7 @@ def parse_file(filename, import_type, actions_config_file):
                                 row = replace_code_nomenclature(row, nomenclatures, reader, reports)
                         elif import_type == 'u':
                             # Replace Organism Code
-                            row = replace_code_organism(row, organisms)
+                            row = replace_code_organism(row, organisms, reader, reports)
                         elif import_type == 'af':
                             # Replace Nomenclatures Codes
                             row = replace_code_nomenclature(row, nomenclatures, reader, reports)
@@ -206,7 +207,16 @@ def parse_file(filename, import_type, actions_config_file):
                 except csv.Error as e:
                     sys.exit(f'Error in file {filename}, line {reader.line_num}: {e}')
     # Report
-    if import_type == 's' :
+    if import_type == 'u' :
+        total = 0
+        lines_to_print = []
+        for code, lines in reports['organism_code_unknown_lines'].items():
+            lines_to_print.append(f"       {code}: {', '.join(lines)}")
+            total += len(lines)
+        print_info(f'   List of {total} lines with unknown organism codes:')
+        print_info('\n'.join(lines_to_print))
+        print_info('-'*72)
+    elif import_type == 's' :
         print_msg(f"Total lines removed: {reports['lines_removed_total']: }")
         print_info('-'*72)
 
@@ -252,7 +262,7 @@ def parse_file(filename, import_type, actions_config_file):
         for code, lines in reports['source_code_unknown_lines'].items():
             lines_to_print.append(f"       {code}: {', '.join(lines)}")
             total += len(lines)
-        print_info(f'   List of {total} lines with unkown source codes:')
+        print_info(f'   List of {total} lines with unknown source codes:')
         print_info('\n'.join(lines_to_print))
         print_info('-'*72)
 
