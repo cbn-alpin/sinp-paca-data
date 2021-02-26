@@ -54,11 +54,11 @@ sed -i -z 's/\n\r\n//g' synthese.csv
 sed -i -z 's/\r\n//g' synthese.csv
 
 # Protection des guillemets doubles
-# grep -P '[^"]"[^"]' > synthese.quote_err.csv
+# grep -P '[^"]"[^"]' synthese.csv > synthese.quote_err.csv
 sed -i 's#\([^"]\)"\([^"]\)#\1""\2#g' synthese.csv
 
 # Caractères UTF-8 mal encodé : respecter l'ordre des commandes !
-# grep -P '\x1A' > synthese.utf8_err.csv
+# grep -P '\x1A' synthese.csv > synthese.utf8_err.csv
 sed -i 's#Rh\x1Ane#Rhône#ig' synthese.csv
 sed -i 's#Moll\x1Ages#Mollèges#ig' synthese.csv
 sed -i 's#ne/\x1Ale d#ne/île d#g' synthese.csv
@@ -76,6 +76,6 @@ sed -i 's#Pibouli\x1Are#Piboulière#g' synthese.csv
 sed -i 's#\x1A#é#g' synthese.csv
 
 # Remplacement des caractères NULL mal formé
-# grep -P '\tN\t' > synthese.null_err.csv
-sed -i 's#\tN\t#\t\\N\t#g' synthese.csv
+# grep -P '\tN\tN\t' synthese.csv  > synthese.null_err.csv
+sed -i 's#\tN\tN\t#\t\\N\t\\N\t#g' synthese.csv
 ```
