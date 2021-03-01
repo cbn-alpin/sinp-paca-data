@@ -11,9 +11,29 @@ ALTER TABLE ref_geo.li_municipalities DROP CONSTRAINT fk_li_municipalities_id_ar
 ALTER TABLE ref_geo.li_grids DROP CONSTRAINT fk_li_grids_id_area ;
 ALTER TABLE gn_synthese.synthese DROP CONSTRAINT fk_synthese_id_area_attachment ;
 ALTER TABLE gn_synthese.cor_area_synthese DROP CONSTRAINT fk_cor_area_synthese_id_area ;
-ALTER TABLE gn_synthese.cor_area_taxon DROP CONSTRAINT fk_cor_area_taxon_id_area ;
 ALTER TABLE gn_monitoring.cor_site_area DROP CONSTRAINT fk_cor_site_area_id_area ;
 ALTER TABLE gn_sensitivity.cor_sensitivity_area DROP CONSTRAINT fk_cor_sensitivity_area_id_area_fkey ;
+
+
+\echo '----------------------------------------------------------------------------'
+\echo 'Disabling Foreigns Keys of "l_areas" on "cor_area_taxon" table...'
+DO $$
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.tables
+            WHERE table_schema = 'gn_synthese'
+                AND table_name = 'cor_area_taxon'
+        ) IS TRUE THEN
+
+            RAISE NOTICE ' Drop foreign key between "l_areas" and "cor_area_taxon"' ;
+            ALTER TABLE gn_synthese.cor_area_taxon DROP CONSTRAINT fk_cor_area_taxon_id_area ;
+
+        ELSE
+      		RAISE NOTICE ' GeoNature > v2.5.5 => table "gn_synthese.cor_area_taxon" not exists !' ;
+        END IF ;
+    END
+$$ ;
 
 
 \echo '--------------------------------------------------------------------------------'
@@ -32,7 +52,7 @@ DROP INDEX ref_geo.index_l_areas_centroid ;
 -- 1. Use st_subdivide() with territory
 -- 2. try to build a new l_areas table instead of deleting rows in existing table
 DELETE FROM ref_geo.l_areas AS a
-USING ref_geo.region_tmp AS c
+USING :areasTmpTable AS c
 WHERE public.st_intersects(c.geom, a.geom) = false
     AND insee_reg = :'sinpRegId';
 
@@ -93,18 +113,32 @@ DROP INDEX gn_synthese.idx_cor_area_synthese_id_area ;
 
 
 \echo '----------------------------------------------------------------------------'
-\echo 'Create index on "cor_area_taxon" entries before deleting'
-CREATE INDEX idx_cor_area_taxon_id_area ON gn_synthese.cor_area_taxon USING btree (id_area) ;
+\echo 'Deleting useless "cor_area_taxon" entries...'
+DO $$
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.tables
+            WHERE table_schema = 'gn_synthese'
+                AND table_name = 'cor_area_taxon'
+        ) IS TRUE THEN
 
-\echo '----------------------------------------------------------------------------'
-\echo 'Delete useless "cor_area_taxon" entries'
-DELETE FROM gn_synthese.cor_area_taxon AS cat
-USING ref_geo.l_areas AS la
-WHERE cat.id_area != la.id_area ;
+            RAISE NOTICE ' Create index on "cor_area_taxon" entries before deleting' ;
+            CREATE INDEX idx_cor_area_taxon_id_area ON gn_synthese.cor_area_taxon USING btree (id_area) ;
 
-\echo '----------------------------------------------------------------------------'
-\echo 'Remove index on "cor_area_taxon" entries after deleting'
-DROP INDEX gn_synthese.idx_cor_area_taxon_id_area ;
+            RAISE NOTICE ' Delete useless "cor_area_taxon" entries' ;
+            DELETE FROM gn_synthese.cor_area_taxon AS cat
+            USING ref_geo.l_areas AS la
+            WHERE cat.id_area != la.id_area ;
+
+            RAISE NOTICE ' Remove index on "cor_area_taxon" entries after deleting' ;
+            DROP INDEX gn_synthese.idx_cor_area_taxon_id_area ;
+
+        ELSE
+      		RAISE NOTICE ' GeoNature > v2.5.5 => table "gn_synthese.cor_area_taxon" not exists !' ;
+        END IF ;
+    END
+$$ ;
 
 
 \echo '----------------------------------------------------------------------------'
