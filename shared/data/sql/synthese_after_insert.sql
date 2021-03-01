@@ -537,48 +537,49 @@ $$ ;
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'For GeoNature > v2.5.5, replay action calculate sensitivity'
-DO $$
-    BEGIN
-        IF EXISTS (
-            SELECT 1
-            FROM pg_trigger
-            WHERE tgname = 'tri_insert_calculate_sensitivity'
-        ) IS TRUE THEN
-            RAISE NOTICE ' For GeoNature > v2.5.5, replay "tri_insert_calculate_sensitivity" action' ;
-            WITH cte AS (
-                SELECT
-                    gn_sensitivity.get_id_nomenclature_sensitivity (
-                        inserted_rows.date_min::date,
-                        taxonomie.find_cdref(inserted_rows.cd_nom),
-                        inserted_rows.the_geom_local,
-                        ('{"STATUT_BIO": ' || inserted_rows.id_nomenclature_bio_status::text || '}')::jsonb
-                    ) AS id_nomenclature_sensitivity,
-                    id_synthese,
-                    t_diff.cd_nomenclature AS cd_nomenclature_diffusion_level
-                FROM gn_synthese.synthese AS inserted_rows
-                    LEFT JOIN ref_nomenclatures.t_nomenclatures AS t_diff
-                    ON t_diff.id_nomenclature = inserted_rows.id_nomenclature_diffusion_level
-                WHERE inserted_rows.id_nomenclature_sensitivity IS NULL
-            )
-            UPDATE gn_synthese.synthese AS s
-            SET
-                id_nomenclature_sensitivity = c.id_nomenclature_sensitivity,
-                id_nomenclature_diffusion_level = ref_nomenclatures.get_id_nomenclature(
-                    'NIV_PRECIS',
-                    gn_sensitivity.calculate_cd_diffusion_level(
-                        c.cd_nomenclature_diffusion_level,
-                        t_sensi.cd_nomenclature
-                    )
-                )
-            FROM cte AS c
-                LEFT JOIN ref_nomenclatures.t_nomenclatures AS t_sensi
-                    ON t_sensi.id_nomenclature = c.id_nomenclature_sensitivity
-            WHERE c.id_synthese = s.id_synthese ;
-        ELSE
-      		RAISE NOTICE ' GeoNature < v2.6.0 => no replay action !' ;
-        END IF ;
-    END
-$$ ;
+\echo 'WARNING : not replay for SINP PACA !'
+-- DO $$
+--     BEGIN
+--         IF EXISTS (
+--             SELECT 1
+--             FROM pg_trigger
+--             WHERE tgname = 'tri_insert_calculate_sensitivity'
+--         ) IS TRUE THEN
+--             RAISE NOTICE ' For GeoNature > v2.5.5, replay "tri_insert_calculate_sensitivity" action' ;
+--             WITH cte AS (
+--                 SELECT
+--                     gn_sensitivity.get_id_nomenclature_sensitivity (
+--                         inserted_rows.date_min::date,
+--                         taxonomie.find_cdref(inserted_rows.cd_nom),
+--                         inserted_rows.the_geom_local,
+--                         ('{"STATUT_BIO": ' || inserted_rows.id_nomenclature_bio_status::text || '}')::jsonb
+--                     ) AS id_nomenclature_sensitivity,
+--                     id_synthese,
+--                     t_diff.cd_nomenclature AS cd_nomenclature_diffusion_level
+--                 FROM gn_synthese.synthese AS inserted_rows
+--                     LEFT JOIN ref_nomenclatures.t_nomenclatures AS t_diff
+--                     ON t_diff.id_nomenclature = inserted_rows.id_nomenclature_diffusion_level
+--                 WHERE inserted_rows.id_nomenclature_sensitivity IS NULL
+--             )
+--             UPDATE gn_synthese.synthese AS s
+--             SET
+--                 id_nomenclature_sensitivity = c.id_nomenclature_sensitivity,
+--                 id_nomenclature_diffusion_level = ref_nomenclatures.get_id_nomenclature(
+--                     'NIV_PRECIS',
+--                     gn_sensitivity.calculate_cd_diffusion_level(
+--                         c.cd_nomenclature_diffusion_level,
+--                         t_sensi.cd_nomenclature
+--                     )
+--                 )
+--             FROM cte AS c
+--                 LEFT JOIN ref_nomenclatures.t_nomenclatures AS t_sensi
+--                     ON t_sensi.id_nomenclature = c.id_nomenclature_sensitivity
+--             WHERE c.id_synthese = s.id_synthese ;
+--         ELSE
+--       		RAISE NOTICE ' GeoNature < v2.6.0 => no replay action !' ;
+--         END IF ;
+--     END
+-- $$ ;
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Enable all triggers after replayed their actions'
