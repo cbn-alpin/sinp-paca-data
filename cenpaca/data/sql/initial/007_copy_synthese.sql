@@ -34,14 +34,14 @@ COPY synthese (
     id_nomenclature_source_status,
     id_nomenclature_info_geo_type,
     id_nomenclature_behaviour,
-    --id_nomenclature_biogeo_status, -- Missing field !
+    id_nomenclature_biogeo_status,
     reference_biblio,
     count_min,
     count_max,
     cd_nom,
     cd_hab,
     nom_cite,
-    --sample_number_proof, -- Missing field !
+    sample_number_proof,
     digital_proof,
     non_digital_proof,
     altitude_min,

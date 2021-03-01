@@ -31,11 +31,18 @@ L'archive au format d'échange doit être stocké sur Dropbox au niveau du dossi
 Elle doit être compressé au format `.tar.bz2` pour cela se placer dans le
 dossier contenant les fichiers `.csv` du format d'échange et lancer la commande :
 ```
-tar jcvf ../2021-02-21_sinp_paca_cenpaca.tar.bz2 .
+tar jcvf ../2021-03-01_sinp_paca_cenpaca.tar.bz2 .
 ```
 
 ## Commandes appliquées
+
+### Fichier synthese.csv export 2021-03-01_sinp_paca_cenpaca
+
+Aucune correction appliqué.
 ### Fichier synthese.csv export 2021-02-21_sinp_paca_cenpaca
+
+Liste des corrections appliquées au fichier `synthese.csv` transmis :
+
 ```
 # Suppression des tabulation présentes dans les valeurs des champs :
 sed -i 's#BENCE Stéphane\t\tpointage#BENCE Stéphane\tpointage#g' synthese.csv
