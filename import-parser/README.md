@@ -26,7 +26,8 @@ pointant vers `../import_parser/runner.py`
   - Si ce n'est pas le cas, il faut le recréer : 
   `cd bin/ ; ln -s ../import_parser/runner.py gn_import_parser.py`
 
-## Utiliser le parser
+## Utiliser le parser
+
 - Lancer une seule commande : `pipenv run python ./bin/gn_import_parser.py <args-opts>`
 - Lancer plusieurs commandes :
   - Activer l'environnement virtuel : `pipenv shell`
