@@ -195,16 +195,34 @@ ALTER TABLE gn_synthese.cor_area_synthese ADD CONSTRAINT fk_cor_area_synthese_id
     FOREIGN KEY (id_area) REFERENCES ref_geo.l_areas(id_area)
     ON UPDATE CASCADE ;
 
-ALTER TABLE gn_synthese.cor_area_taxon ADD CONSTRAINT fk_cor_area_taxon_id_area
-    FOREIGN KEY (id_area) REFERENCES ref_geo.l_areas(id_area)
-    ON UPDATE CASCADE ;
-
 ALTER TABLE gn_sensitivity.cor_sensitivity_area ADD CONSTRAINT fk_cor_sensitivity_area_id_area_fkey
     FOREIGN KEY (id_area) REFERENCES ref_geo.l_areas(id_area) ;
 
 ALTER TABLE gn_monitoring.cor_site_area ADD CONSTRAINT fk_cor_site_area_id_area
     FOREIGN KEY (id_area) REFERENCES ref_geo.l_areas(id_area) ;
 
+
+\echo '----------------------------------------------------------------------------'
+\echo 'Enabling Foreigns Keys of "l_areas" on "cor_area_taxon" table...'
+DO $$
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.tables
+            WHERE table_schema = 'gn_synthese'
+                AND table_name = 'cor_area_taxon'
+        ) IS TRUE THEN
+
+            RAISE NOTICE ' Add foreign key between "l_areas" and "cor_area_taxon"' ;
+            ALTER TABLE gn_synthese.cor_area_taxon ADD CONSTRAINT fk_cor_area_taxon_id_area
+                FOREIGN KEY (id_area) REFERENCES ref_geo.l_areas(id_area)
+                ON UPDATE CASCADE ;
+
+        ELSE
+      		RAISE NOTICE ' GeoNature > v2.5.5 => table "gn_synthese.cor_area_taxon" not exists !' ;
+        END IF ;
+    END
+$$ ;
 
 \echo '----------------------------------------------------------------------------'
 \echo 'COMMIT if all is ok:'
