@@ -135,11 +135,19 @@ function loadSinpArea() {
         sudo -n -u "${pg_admin_name}" -s \
             psql -d "${db_name}" \
                 -v areasTmpTable="${area_table_name}" \
+                -v areaSubdividedTableName="${area_subdivided_table_name}" \
                 -f "${sql_dir}/001_initialize.sql"
 
         export PGPASSWORD="$db_pass"; \
             psql -h $db_host -U $db_user -d $db_name \
                 -f "${area_sql_file_path}"
+
+        export PGPASSWORD="$db_pass"; \
+            psql -h $db_host -U $db_user -d $db_name \
+                -v areaSubdividedTableName="${area_subdivided_table_name}" \
+                -v areasTmpTable="${area_table_name}" \
+                -v sinpRegId="${area_sinp_region_id}" \
+                -f "${sql_dir}/002_subdivide_sinp_area.sql"
 
         removePreviousSinpArea
 
@@ -147,7 +155,7 @@ function loadSinpArea() {
             psql -h $db_host -U $db_user -d $db_name \
                 -v areasTmpTable="${area_table_name}" \
                 -v sinpRegId="${area_sinp_region_id}" \
-                -f "${sql_dir}/003_add_sinp_area.sql"
+                -f "${sql_dir}/004_add_sinp_area.sql"
     else
         local msg="SQL file of french administrative areas was NOT loaded in database"
         printVerbose "${Blink}${Mag}INFO: ${RCol}${Gra}${msg}"
@@ -155,10 +163,12 @@ function loadSinpArea() {
 }
 
 function removePreviousSinpArea() {
+    printMsg "Removing previous SINP area..."
+
     if [[ "${area_remove_previous_sinp}" = true ]]; then
         sudo -n -u "${pg_admin_name}" -s \
             psql -d "${db_name}" \
-                -f "${sql_dir}/002_remove_sinp_area.sql"
+                -f "${sql_dir}/003_remove_sinp_area.sql"
     else
         local msg="Previous SINP area was NOT removed from database"
         printVerbose "${Blink}${Mag}INFO: ${RCol}${Gra}${msg}"
@@ -167,12 +177,14 @@ function removePreviousSinpArea() {
 
 function removeAreasOutsideSinpArea() {
     printMsg "Removing areas outside SINP area..."
+
     if [[ "${area_remove_outside_areas}" = true ]]; then
         sudo -n -u "${pg_admin_name}" -s \
             psql -d "${db_name}" \
                 -v areasTmpTable="${area_table_name}" \
                 -v sinpRegId="${area_sinp_region_id}" \
-                -f "${sql_dir}/004_remove_outside_areas.sql"
+                -v areaSubdividedTableName="${area_subdivided_table_name}" \
+                -f "${sql_dir}/005_remove_outside_areas.sql"
     else
         local msg="Areas are't intersecting with SINP area were NOT removed from database"
         printVerbose "${Blink}${Mag}INFO: ${RCol}${Gra}${msg}"

@@ -6,13 +6,13 @@ BEGIN;
 
 \echo '--------------------------------------------------------------------------------'
 \echo 'Disable Foreigns Keys of "l_areas" to speed the deleting'
-ALTER TABLE ref_geo.l_areas DROP CONSTRAINT fk_l_areas_id_type ;
-ALTER TABLE ref_geo.li_municipalities DROP CONSTRAINT fk_li_municipalities_id_area ;
-ALTER TABLE ref_geo.li_grids DROP CONSTRAINT fk_li_grids_id_area ;
-ALTER TABLE gn_synthese.synthese DROP CONSTRAINT fk_synthese_id_area_attachment ;
-ALTER TABLE gn_synthese.cor_area_synthese DROP CONSTRAINT fk_cor_area_synthese_id_area ;
-ALTER TABLE gn_monitoring.cor_site_area DROP CONSTRAINT fk_cor_site_area_id_area ;
-ALTER TABLE gn_sensitivity.cor_sensitivity_area DROP CONSTRAINT fk_cor_sensitivity_area_id_area_fkey ;
+ALTER TABLE ref_geo.l_areas DROP CONSTRAINT IF EXISTS fk_l_areas_id_type ;
+ALTER TABLE ref_geo.li_municipalities DROP CONSTRAINT IF EXISTS fk_li_municipalities_id_area ;
+ALTER TABLE ref_geo.li_grids DROP CONSTRAINT IF EXISTS fk_li_grids_id_area ;
+ALTER TABLE gn_synthese.synthese DROP CONSTRAINT IF EXISTS fk_synthese_id_area_attachment ;
+ALTER TABLE gn_synthese.cor_area_synthese DROP CONSTRAINT IF EXISTS fk_cor_area_synthese_id_area ;
+ALTER TABLE gn_monitoring.cor_site_area DROP CONSTRAINT IF EXISTS fk_cor_site_area_id_area ;
+ALTER TABLE gn_sensitivity.cor_sensitivity_area DROP CONSTRAINT IF EXISTS fk_cor_sensitivity_area_id_area_fkey ;
 
 
 \echo '----------------------------------------------------------------------------'
@@ -27,7 +27,7 @@ DO $$
         ) IS TRUE THEN
 
             RAISE NOTICE ' Drop foreign key between "l_areas" and "cor_area_taxon"' ;
-            ALTER TABLE gn_synthese.cor_area_taxon DROP CONSTRAINT fk_cor_area_taxon_id_area ;
+            ALTER TABLE gn_synthese.cor_area_taxon DROP CONSTRAINT IF EXISTS fk_cor_area_taxon_id_area ;
 
         ELSE
       		RAISE NOTICE ' GeoNature > v2.5.5 => table "gn_synthese.cor_area_taxon" not exists !' ;
@@ -35,27 +35,23 @@ DO $$
     END
 $$ ;
 
-
 \echo '--------------------------------------------------------------------------------'
 \echo 'Drop "l_areas" primary key'
-ALTER TABLE ref_geo.l_areas DROP CONSTRAINT pk_l_areas ;
+ALTER TABLE ref_geo.l_areas DROP CONSTRAINT IF EXISTS pk_l_areas ;
 
 
 \echo '--------------------------------------------------------------------------------'
 \echo 'Drop "l_areas" indexes not used by deleting'
-DROP INDEX ref_geo.index_l_areas_centroid ;
+DROP INDEX IF EXISTS ref_geo.index_l_areas_centroid ;
 
 
 \echo '----------------------------------------------------------------------------'
 \echo 'Delete areas not intersect with SINP area'
--- TODO: to improve performance :
--- 1. Use st_subdivide() with territory
--- 2. try to build a new l_areas table instead of deleting rows in existing table
 DELETE FROM ref_geo.l_areas AS a
-USING :areasTmpTable AS c
-WHERE public.st_intersects(c.geom, a.geom) = false
-    AND insee_reg = :'sinpRegId';
-
+WHERE NOT EXISTS (
+   SELECT 'X' FROM :areaSubdividedTableName AS c
+   WHERE public.st_intersects(c.geom, a.geom)
+) ;
 
 \echo '--------------------------------------------------------------------------------'
 \echo 'Restore indexes'
@@ -69,47 +65,53 @@ ALTER TABLE ref_geo.l_areas ADD CONSTRAINT pk_l_areas PRIMARY KEY (id_area) ;
 
 \echo '----------------------------------------------------------------------------'
 \echo 'Create index on "li_municipalities" entries before deleting'
-CREATE INDEX idx_li_municipalities_id_area ON ref_geo.li_municipalities USING btree (id_area) ;
+CREATE INDEX IF NOT EXISTS idx_li_municipalities_id_area ON ref_geo.li_municipalities USING btree (id_area) ;
 
 \echo '----------------------------------------------------------------------------'
 \echo 'Delete useless "li_municipalities" entries'
 DELETE FROM ref_geo.li_municipalities AS lm
-USING ref_geo.l_areas AS la
-WHERE lm.id_area != la.id_area ;
+WHERE NOT EXISTS (
+   SELECT 'X' FROM ref_geo.l_areas AS la
+   WHERE la.id_area = lm.id_area
+) ;
 
 \echo '----------------------------------------------------------------------------'
 \echo 'Remove index on "li_municipalities" entries after deleting'
-DROP INDEX ref_geo.idx_li_municipalities_id_area ;
+DROP INDEX IF EXISTS ref_geo.idx_li_municipalities_id_area ;
 
 
 \echo '----------------------------------------------------------------------------'
 \echo 'Create index on "li_grids" entries before deleting'
-CREATE INDEX idx_li_grids_id_area ON ref_geo.li_grids USING btree (id_area) ;
+CREATE INDEX IF NOT EXISTS idx_li_grids_id_area ON ref_geo.li_grids USING btree (id_area) ;
 
 \echo '----------------------------------------------------------------------------'
 \echo 'Delete useless "li_grids" entries'
 DELETE FROM ref_geo.li_grids AS lg
-USING ref_geo.l_areas AS la
-WHERE lg.id_area != la.id_area ;
+WHERE NOT EXISTS (
+   SELECT 'X' FROM ref_geo.l_areas AS la
+   WHERE la.id_area = lg.id_area
+) ;
 
 \echo '----------------------------------------------------------------------------'
 \echo 'Remove index on "li_grids" entries after deleting'
-DROP INDEX ref_geo.idx_li_grids_id_area ;
+DROP INDEX IF EXISTS ref_geo.idx_li_grids_id_area ;
 
 
 \echo '----------------------------------------------------------------------------'
 \echo 'Create index on "cor_area_synthese" entries before deleting'
-CREATE INDEX idx_cor_area_synthese_id_area ON gn_synthese.cor_area_synthese USING btree (id_area) ;
+CREATE INDEX IF NOT EXISTS idx_cor_area_synthese_id_area ON gn_synthese.cor_area_synthese USING btree (id_area) ;
 
 \echo '----------------------------------------------------------------------------'
 \echo 'Delete useless "cor_area_synthese" entries'
 DELETE FROM gn_synthese.cor_area_synthese AS cas
-USING ref_geo.l_areas AS la
-WHERE cas.id_area != la.id_area ;
+WHERE NOT EXISTS (
+   SELECT 'X' FROM ref_geo.l_areas AS la
+   WHERE la.id_area = cas.id_area
+) ;
 
 \echo '----------------------------------------------------------------------------'
 \echo 'Remove index on "cor_area_synthese" entries after deleting'
-DROP INDEX gn_synthese.idx_cor_area_synthese_id_area ;
+DROP INDEX IF EXISTS gn_synthese.idx_cor_area_synthese_id_area ;
 
 
 \echo '----------------------------------------------------------------------------'
@@ -124,15 +126,17 @@ DO $$
         ) IS TRUE THEN
 
             RAISE NOTICE ' Create index on "cor_area_taxon" entries before deleting' ;
-            CREATE INDEX idx_cor_area_taxon_id_area ON gn_synthese.cor_area_taxon USING btree (id_area) ;
+            CREATE INDEX IF NOT EXISTS  idx_cor_area_taxon_id_area ON gn_synthese.cor_area_taxon USING btree (id_area) ;
 
             RAISE NOTICE ' Delete useless "cor_area_taxon" entries' ;
             DELETE FROM gn_synthese.cor_area_taxon AS cat
-            USING ref_geo.l_areas AS la
-            WHERE cat.id_area != la.id_area ;
+            WHERE NOT EXISTS (
+                SELECT 'X' FROM ref_geo.l_areas AS la
+                WHERE  la.id_area = cat.id_area
+            ) ;
 
             RAISE NOTICE ' Remove index on "cor_area_taxon" entries after deleting' ;
-            DROP INDEX gn_synthese.idx_cor_area_taxon_id_area ;
+            DROP INDEX IF EXISTS gn_synthese.idx_cor_area_taxon_id_area ;
 
         ELSE
       		RAISE NOTICE ' GeoNature > v2.5.5 => table "gn_synthese.cor_area_taxon" not exists !' ;
@@ -143,32 +147,36 @@ $$ ;
 
 \echo '----------------------------------------------------------------------------'
 \echo 'Create index on "cor_sensitivity_area" entries before deleting'
-CREATE INDEX idx_cor_sensitivity_area_id_area ON gn_sensitivity.cor_sensitivity_area USING btree (id_area) ;
+CREATE INDEX IF NOT EXISTS idx_cor_sensitivity_area_id_area ON gn_sensitivity.cor_sensitivity_area USING btree (id_area) ;
 
 \echo '----------------------------------------------------------------------------'
 \echo 'Delete useless "cor_sensitivity_area" entries'
 DELETE FROM gn_sensitivity.cor_sensitivity_area AS csa
-USING ref_geo.l_areas AS la
-WHERE csa.id_area != la.id_area ;
+WHERE NOT EXISTS (
+   SELECT 'X' FROM ref_geo.l_areas AS la
+   WHERE la.id_area = csa.id_area
+) ;
 
 \echo '----------------------------------------------------------------------------'
 \echo 'Remove index on "cor_sensitivity_area" entries after deleting'
-DROP INDEX gn_sensitivity.idx_cor_sensitivity_area_id_area ;
+DROP INDEX IF EXISTS gn_sensitivity.idx_cor_sensitivity_area_id_area ;
 
 
 \echo '----------------------------------------------------------------------------'
 \echo 'Create index on "cor_site_area" entries before deleting'
-CREATE INDEX idx_cor_site_area_id_area ON gn_monitoring.cor_site_area USING btree (id_area) ;
+CREATE INDEX IF NOT EXISTS idx_cor_site_area_id_area ON gn_monitoring.cor_site_area USING btree (id_area) ;
 
 \echo '----------------------------------------------------------------------------'
 \echo 'Delete useless "cor_site_area" entries'
 DELETE FROM gn_monitoring.cor_site_area AS csa
-USING ref_geo.l_areas AS la
-WHERE csa.id_area != la.id_area ;
+WHERE NOT EXISTS (
+   SELECT 'X' FROM ref_geo.l_areas AS la
+   WHERE la.id_area = csa.id_area
+) ;
 
 \echo '----------------------------------------------------------------------------'
 \echo 'Remove index on "cor_site_area" entries after deleting'
-DROP INDEX gn_monitoring.idx_cor_site_area_id_area ;
+DROP INDEX IF EXISTS gn_monitoring.idx_cor_site_area_id_area ;
 
 
 \echo '--------------------------------------------------------------------------------'
