@@ -33,3 +33,16 @@ dossier contenant les fichiers `.csv` du format d'échange et lancer la commande
 ```
 tar jcvf ../2021-02-24_sinp_paca_cbna-cbnmed.tar.bz2 .
 ```
+
+## Commandes appliquées
+
+### Fichier synthese.csv export 2021-02-24_sinp_paca_cbna-cbnmed
+
+Liste des corrections appliquées au fichier `synthese.csv` transmis :
+
+```
+sed -i -z 's/Scorzonera austriaca Willd. \n/Scorzonera austriaca Willd. /g' synthese.csv
+sed -i -z 's/Paronychia kapela (Hacq.) Kerner \n/Paronychia kapela (Hacq.) Kerner /g' synthese.csv
+sed -i -z 's/Peucedanum schottii Besser ex DC. \n/Peucedanum schottii Besser ex DC. /g' synthese.csv
+sed -i -z 's/Genista hispanica\n/Genista hispanica/g' synthese.csv
+```
