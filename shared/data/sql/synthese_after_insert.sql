@@ -477,8 +477,49 @@ $$ ;
 TRUNCATE TABLE cor_area_synthese ;
 -- TO AVOID TRUNCATE : add condition on id_source or id_dataset to reduce synthese table entries in below inserts
 
-\echo ' Reinsert all data in cor_area_synthese for Départements and Communes'
+-- \echo '----------------------------------------------------------------------------'
+-- \echo 'Create subdivided DEP and COM areas table for faster cor_area_synthese reinsert'
+
+-- \echo ' Remove subdivided DEP and COM areas table if necessary'
+-- DROP TABLE IF EXISTS ref_geo.tmp_subdivided_areas ;
+
+-- \echo ' Remove geom index on subdivided DEP and COM areas table'
+-- DROP INDEX IF EXISTS ref_geo.idx_tmp_subdivided_areas ;
+
+-- \echo ' Add subdivided DEP and COM areas table'
+-- CREATE TABLE ref_geo.tmp_subdivided_areas AS
+--     SELECT
+--         random() AS gid,
+--         a.id_area AS area_id,
+--         st_subdivide(a.geom, 250) AS geom
+--     FROM ref_geo.l_areas AS a
+--     WHERE a.id_type IN (
+--         ref_geo.get_id_area_type('DEP'), -- Départements
+--         ref_geo.get_id_area_type('COM') -- Communes
+--     ) ;
+
+-- \echo ' Create index on geom column for subdivided DEP and COM areas table'
+-- CREATE INDEX IF NOT EXISTS idx_tmp_subdivided_geom ON ref_geo.tmp_subdivided_areas USING gist (geom);
+
+-- \echo ' Create index on column id_area for subdivided DEP and COM areas table'
+-- CREATE INDEX IF NOT EXISTS idx_tmp_subdivided_area_id ON ref_geo.tmp_subdivided_areas USING btree(area_id) ;
+
+-- TODO: update and test query for reinsert DEP and COM in cor_area_synthese.
+
+\echo '----------------------------------------------------------------------------'
+\echo 'Reinsert all data in cor_area_synthese'
+
+\echo ' Reinsert for Départements and Communes'
 -- ~35mn for ~1,000 areas and ~6,000,000 of rows in synthese table on SSD NVME disk
+-- TODO: test new query below using subdivided complex areas !
+-- INSERT INTO cor_area_synthese
+--     SELECT
+--         s.id_synthese,
+--         a.id_area
+--     FROM ref_geo.tmp_subdivided_areas AS a
+--         JOIN synthese AS s
+--             ON public.st_intersects(s.the_geom_local, a.geom) ;
+
 INSERT INTO cor_area_synthese
     SELECT
         s.id_synthese,
@@ -491,7 +532,7 @@ INSERT INTO cor_area_synthese
         ref_geo.get_id_area_type('COM') -- Communes
     ) ;
 
-\echo ' Reinsert all data in cor_area_synthese for meshes'
+\echo ' Reinsert for meshes'
 -- ~3mn for ~35,000 areas and ~6,000,000 of rows in synthese table on SSD NVME disk
 INSERT INTO cor_area_synthese
     SELECT
