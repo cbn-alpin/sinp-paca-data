@@ -49,6 +49,10 @@ CREATE INDEX index_gist_t_subdivided_territory_geom ON atlas.t_subdivided_territ
 CREATE UNIQUE INDEX t_subdivided_territory_gid_idx ON atlas.t_subdivided_territory USING btree (gid);
 
 -- Materialized View: atlas.vm_observations
+-- TIMING: ~18mn for territory PACA french PACA region, ~1,000 municipalities and ~9,300,000 of rows
+-- in synthese table on OVH Block Storage disk.
+-- TIMING: ~7mn for territory PACA french PACA region, ~1,000 municipalities and ~9,300,000 of rows
+-- in synthese table on SSD Nvme disk.
 CREATE MATERIALIZED VIEW atlas.vm_observations AS
 	SELECT s.id_synthese AS id_observation,
 		s.insee,
@@ -340,13 +344,19 @@ SELECT atlas.create_vm_altitudes();
 
 -- Rétablir les droits SELECT à l'utilisateur de l'application GeoNature-atlas (user_pg dans main/configuration/settings.ini).
 -- Remplacer geonatatlas par votre utilisateur de BDD si vous l'avez modifié.
-GRANT SELECT ON TABLE atlas.t_subdivided_territory TO geonatadmin;
-GRANT SELECT ON TABLE atlas.vm_observations TO geonatadmin;
-GRANT SELECT ON TABLE atlas.vm_taxons_plus_observes TO geonatadmin;
-GRANT SELECT ON TABLE atlas.vm_search_taxon TO geonatadmin;
-GRANT SELECT ON TABLE atlas.vm_taxons TO geonatadmin;
-GRANT SELECT ON TABLE atlas.vm_mois TO geonatadmin;
-GRANT SELECT ON TABLE atlas.vm_altitudes TO geonatadmin;
-GRANT SELECT ON TABLE atlas.vm_observations_mailles TO geonatadmin;
+GRANT SELECT ON TABLE atlas.l_communes TO geonatatlas;
+GRANT SELECT ON TABLE atlas.t_layer_territoire TO geonatatlas;
+GRANT SELECT ON TABLE atlas.t_mailles_territoire TO geonatatlas;
+GRANT SELECT ON TABLE atlas.t_subdivided_territory TO geonatatlas;
+GRANT SELECT ON TABLE atlas.vm_altitudes TO geonatatlas;
+GRANT SELECT ON TABLE atlas.vm_communes TO geonatatlas;
+GRANT SELECT ON TABLE atlas.vm_cor_taxon_attribut TO geonatatlas;
+GRANT SELECT ON TABLE atlas.vm_medias TO geonatatlas;
+GRANT SELECT ON TABLE atlas.vm_mois TO geonatatlas;
+GRANT SELECT ON TABLE atlas.vm_observations TO geonatatlas;
+GRANT SELECT ON TABLE atlas.vm_observations_mailles TO geonatatlas;
+GRANT SELECT ON TABLE atlas.vm_search_taxon TO geonatatlas;
+GRANT SELECT ON TABLE atlas.vm_taxons TO geonatatlas;
+GRANT SELECT ON TABLE atlas.vm_taxons_plus_observes TO geonatatlas;
 
 COMMIT;
