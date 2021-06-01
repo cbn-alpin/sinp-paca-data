@@ -32,7 +32,7 @@ INSERT INTO ref_nomenclatures.t_nomenclatures (
         'Publique régie',
         'Publique régie : La Donnée Source est publique et a été produite directement par un organisme ayant autorité publique avec ses moyens humains et techniques propres.',
         'SINP',
-        'Validé',
+        'Gelé',
         0,
         '002.003',
         true
@@ -65,7 +65,7 @@ INSERT INTO ref_nomenclatures.t_nomenclatures (
         'Publique acquise',
         'Publique Acquise : La donnée-source a été produite par un organisme privé (associations, bureaux d’étude…) ou une personne physique à titre personnel. Les droits patrimoniaux exclusifs ou non exclusifs, de copie, traitement et diffusion sans limitation ont été acquis à titre gracieux ou payant, sur marché ou par convention, par un organisme ayant autorité publique. La donnée-source est devenue publique.',
         'SINP',
-        'Validé',
+        'Gelé',
         0,
         '002.004',
         true
