@@ -1,0 +1,3 @@
+[submodule "import-parser"]
+	path = import-parser
+	url = git@github.com:cbn-alpin/geonature-import-parser.git
