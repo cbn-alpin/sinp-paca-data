@@ -133,7 +133,7 @@ function insertSource() {
         cd "${root_dir}/import-parser/"
         pipenv run python ./bin/gn_import_parser.py \
             --type "so" \
-            --config "${conf_dir}/parser_actions.ini" \
+            --config "${conf_dir}/parser_actions_initial.ini" \
             "${raw_dir}/${cp_filename_source}"
     else
         printVerbose "SOURCE CSV file already parsed." ${Gra}
@@ -156,7 +156,7 @@ function insertOrganism() {
         cd "${root_dir}/import-parser/"
         pipenv run python ./bin/gn_import_parser.py \
             --type "o" \
-            --config "${conf_dir}/parser_actions.ini" \
+            --config "${conf_dir}/parser_actions_initial.ini" \
             "${raw_dir}/${cp_filename_organism}"
     else
         printVerbose "ORGANISM CSV file already parsed." ${Gra}
@@ -179,7 +179,7 @@ function insertUser() {
         cd "${root_dir}/import-parser/"
         pipenv run python ./bin/gn_import_parser.py \
             --type "u" \
-            --config "${conf_dir}/parser_actions.ini" \
+            --config "${conf_dir}/parser_actions_initial.ini" \
             "${raw_dir}/${cp_filename_user}"
     else
         printVerbose "USER CSV file already parsed." ${Gra}
@@ -202,7 +202,7 @@ function insertAcquisitionFramework() {
         cd "${root_dir}/import-parser/"
         pipenv run python ./bin/gn_import_parser.py \
             --type "af" \
-            --config "${conf_dir}/parser_actions.ini" \
+            --config "${conf_dir}/parser_actions_initial.ini" \
             "${raw_dir}/${cp_filename_af}"
     else
         printVerbose "ACQUISITION FRAMEWORK CSV file already parsed." ${Gra}
@@ -225,7 +225,7 @@ function insertDataset() {
         cd "${root_dir}/import-parser/"
         pipenv run python ./bin/gn_import_parser.py \
             --type "d" \
-            --config "${conf_dir}/parser_actions.ini" \
+            --config "${conf_dir}/parser_actions_initial.ini" \
             "${raw_dir}/${cp_filename_dataset}"
     else
         printVerbose "DATASET CSV file already parsed." ${Gra}
@@ -265,7 +265,7 @@ function insertSynthese() {
         cd "${root_dir}/import-parser/"
         pipenv run python ./bin/gn_import_parser.py \
             --type "s" \
-            --config "${conf_dir}/parser_actions.ini" \
+            --config "${conf_dir}/parser_actions_initial.ini" \
             "${raw_dir}/${cp_filename_synthese}"
     else
         printVerbose "SYNTHESE CSV file already parsed." ${Gra}
