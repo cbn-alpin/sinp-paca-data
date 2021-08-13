@@ -1,5 +1,5 @@
 \echo 'Update synthese table with data store in temporary table.'
-\echo 'Rights: superuser'
+\echo 'Rights: db-owner'
 \echo 'GeoNature database compatibility : v2.6.2+'
 -- Usage: psql -h "localhost" -U "<db-owner-name>" -d "<db-name>" -v csvFilePath="<path-to-csv-to-import>" -f <path-to-this-sql-file>
 -- Ex.: psql -h "localhost" -U "admin" -d "geonature2db" -v csvFilePath="/home/geonat/data/cenpaca/data/raw/synthese.fix-2021-03-24.csv" -f ~/data/cenpaca/data/sql/fix/001_fix_date_count.sql
