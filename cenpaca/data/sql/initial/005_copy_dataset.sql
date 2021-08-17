@@ -117,7 +117,7 @@ WHERE NOT EXISTS (
 
 
 \echo '-------------------------------------------------------------------------------'
-\echo 'Insert link between acquisition framework and territory'
+\echo 'Insert link between dataset and territory'
 INSERT INTO cor_dataset_territory (
     id_dataset,
     id_nomenclature_territory,
