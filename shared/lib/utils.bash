@@ -101,7 +101,7 @@ function exitScript() {
         exit ${2}
     fi
 
-    exitScript 'Missing required argument to exitScript()!' 2
+    exitScript "Missing required argument to ${FUNCNAME[0]}()!" 2
 }
 
 # DESC: Pretty print the provided string
@@ -112,7 +112,7 @@ function exitScript() {
 # SOURCE: https://github.com/ralish/bash-script-template/blob/stable/source.sh
 function printPretty() {
     if [[ $# -lt 1 ]]; then
-        exitScript 'Missing required argument to printPretty()!' 2
+        exitScript "Missing required argument to ${FUNCNAME[0]}()!" 2
     fi
 
     if [[ -n ${2-} ]]; then
@@ -127,7 +127,7 @@ function printPretty() {
 # OUTS: None
 function printMsg() {
     if [[ $# -lt 1 ]]; then
-        script_exit 'Missing required argument to printMsg()!' 2
+        exitScript "Missing required argument to ${FUNCNAME[0]}()!" 2
     fi
     printPretty "--> ${1}" ${Yel}
 }
@@ -137,7 +137,7 @@ function printMsg() {
 # OUTS: None
 function printInfo() {
     if [[ $# -lt 1 ]]; then
-        script_exit 'Missing required argument to printInfo()!' 2
+        exitScript "Missing required argument to ${FUNCNAME[0]}()!" 2
     fi
     printPretty "--> ${1}" ${Whi}
 }
@@ -147,7 +147,7 @@ function printInfo() {
 # OUTS: None
 function printError() {
     if [[ $# -lt 1 ]]; then
-        script_exit 'Missing required argument to printError()!' 2
+        exitScript "Missing required argument to ${FUNCNAME[0]}()!" 2
     fi
     printPretty "--> ${1}" ${Red}
 }
@@ -243,7 +243,7 @@ function loadScriptConfig() {
 # SOURCE: https://stackoverflow.com/a/20564208
 redirectOutput() {
     if [[ $# -lt 1 ]]; then
-        exitScript 'Missing required argument to redirectOutput()!' 2
+        exitScript "Missing required argument to ${FUNCNAME[0]}()!" 2
     fi
     local log_file="${1}"
     local log_file_dir="$(dirname "${log_file}")"
@@ -262,7 +262,7 @@ redirectOutput() {
 # SOURCE: https://github.com/ralish/bash-script-template/blob/stable/source.sh
 function checkBinary() {
     if [[ $# -lt 1 ]]; then
-        exitScript 'Missing required argument to checkBinary()!' 2
+        exitScript "Missing required argument to ${FUNCNAME[0]}()!" 2
     fi
     commands=("${@}")
     for cmd in "${commands[@]}"; do
@@ -327,7 +327,7 @@ function displayTimeElapsed() {
 # SOURCE: https://unix.stackexchange.com/a/27014
 function displayTime() {
     if [[ $# -lt 1 ]]; then
-        exitScript 'Missing required argument to displayTime()!' 2
+        exitScript "Missing required argument to ${FUNCNAME[0]}()!" 2
     fi
 	local T="${1}"
 	local D=$((T/60/60/24))
@@ -350,7 +350,7 @@ function displayTime() {
 # SOURCE: https://gist.github.com/F1LT3R/fa7f102b08a514f2c535
 function displayProgressBar() {
     if [[ $# -lt 2 ]]; then
-        exitScript 'Missing required argument to displayProgressBar()!' 2
+        exitScript "Missing required argument to ${FUNCNAME[0]}()!" 2
     fi
 
     local task_count="${1}"
@@ -392,7 +392,7 @@ function displayProgressBar() {
 # SOURCE:
 trim() {
     if [[ $# -lt 1 ]]; then
-        exitScript 'Missing required argument to ${FUNCNAME}()!' 2
+        exitScript "Missing required argument to ${FUNCNAME[0]}()!" 2
     fi
     local var="$*"
     # remove leading whitespace characters
