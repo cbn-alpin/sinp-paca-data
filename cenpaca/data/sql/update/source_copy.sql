@@ -10,12 +10,12 @@ SET client_encoding = 'UTF8';
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Remove imports sources table if already exists'
-DROP TABLE IF EXISTS gn_imports.:sourcesImportTable ;
+DROP TABLE IF EXISTS gn_imports.:sourceImportTable ;
 
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Create imports sources table from "t_sources" with additional fields'
-CREATE TABLE gn_imports.:sourcesImportTable AS
+CREATE TABLE gn_imports.:sourceImportTable AS
     SELECT
         NULL::INT AS gid,
         name_source,
@@ -32,35 +32,35 @@ WITH NO DATA ;
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Add primary key on imports sources table'
-\set importTablePk 'pk_':sourcesImportTable
-ALTER TABLE gn_imports.:sourcesImportTable
+\set importTablePk 'pk_':sourceImportTable
+ALTER TABLE gn_imports.:sourceImportTable
 	ALTER COLUMN gid ADD GENERATED ALWAYS AS IDENTITY,
 	ADD CONSTRAINT :importTablePk PRIMARY KEY(gid);
 
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Create indexes on imports sources table'
-\set nameIdx 'idx_unique_':sourcesImportTable'_name'
+\set nameIdx 'idx_unique_':sourceImportTable'_name'
 CREATE UNIQUE INDEX :nameIdx
-    ON gn_imports.:sourcesImportTable USING btree (name_source);
+    ON gn_imports.:sourceImportTable USING btree (name_source);
 
-\set updateDateIdx 'idx_':sourcesImportTable'_meta_update_date'
+\set updateDateIdx 'idx_':sourceImportTable'_meta_update_date'
 CREATE INDEX :updateDateIdx
-    ON gn_imports.:sourcesImportTable USING btree (meta_update_date);
+    ON gn_imports.:sourceImportTable USING btree (meta_update_date);
 
-\set lastActionIdx 'idx_':sourcesImportTable'_meta_last_action'
+\set lastActionIdx 'idx_':sourceImportTable'_meta_last_action'
 CREATE INDEX :lastActionIdx
-    ON gn_imports.:sourcesImportTable USING btree (meta_last_action);
+    ON gn_imports.:sourceImportTable USING btree (meta_last_action);
 
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Attribute imports sources to GeoNature DB owner'
-ALTER TABLE gn_imports.:sourcesImportTable OWNER TO :gnDbOwner ;
+ALTER TABLE gn_imports.:sourceImportTable OWNER TO :gnDbOwner ;
 
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Copy CVS file to import sources table'
-COPY gn_imports.:sourcesImportTable (
+COPY gn_imports.:sourceImportTable (
     name_source,
     desc_source,
     entity_source_pk_field,

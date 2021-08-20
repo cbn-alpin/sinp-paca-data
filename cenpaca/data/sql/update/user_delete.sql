@@ -1,5 +1,5 @@
 BEGIN;
--- This file contain a variable "${usersImportTable}"" which must be replaced
+-- This file contain a variable "${userImportTable}"" which must be replaced
 -- with "sed" before passing the updated content to psql.
 
 \echo '-------------------------------------------------------------------------------'
@@ -12,34 +12,43 @@ SET client_encoding = 'UTF8';
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Batch deletion in "t_roles" of the imported users'
--- TODO : set stopAt with a "SELECT COUNT(*) FROM :gn_imports.:usersImportTable" query.
--- TODO: find a better field than identifier to link because it must be updated too !
 -- TODO: delete cascade or not ?
 DO $$
 DECLARE
-    step INTEGER := 1000 ;
-    stopAt INTEGER := 1000 ;
+    step INTEGER ;
+    stopAt INTEGER ;
     offsetCnt INTEGER := 0 ;
     affectedRows INTEGER;
 BEGIN
+    -- Set dynamicly stopAt and step
+    stopAt := gn_imports.computeImportTotal('gn_imports.${userImportTable}', 'D') ;
+    step := gn_imports.computeImportStep(stopAt) ;
+    RAISE NOTICE 'Total found: %, step used: %', stopAt, step ;
+
     RAISE NOTICE 'Start to loop on data to delete in "t_roles" table' ;
     WHILE offsetCnt < stopAt LOOP
-        DELETE FROM ONLY utilisateurs.t_roles
-        WHERE identifiant IN (
-            SELECT identifier
-            FROM gn_imports.${usersImportTable}
+
+        RAISE NOTICE '-------------------------------------------------' ;
+        RAISE NOTICE 'Try to delete % users from %', step, offsetCnt ;
+
+        -- TODO: delete linked tables before ! See AURA db-geonature scripts.
+
+        WITH user_to_delete AS (
+            SELECT identifier, unique_id
+            FROM gn_imports.${userImportTable}
             WHERE meta_last_action = 'D'
             ORDER BY gid ASC
             LIMIT step
             OFFSET offsetCnt
-        ) ;
+        )
+        DELETE FROM ONLY utilisateurs.t_roles
+        WHERE identifiant IN (SELECT identifier FROM user_to_delete)
+            OR uuid_role IN (SELECT unique_id FROM user_to_delete) ;
 
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Delete affected rows: %', affectedRows ;
 
         offsetCnt := offsetCnt + (step) ;
-        RAISE NOTICE 'offsetCnt: %', offsetCnt ;
-
     END LOOP ;
 END
 $$ ;

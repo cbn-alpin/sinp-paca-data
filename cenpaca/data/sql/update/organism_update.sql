@@ -1,5 +1,5 @@
 BEGIN;
--- This file contain a variable "${organismsImportTable}" which must be replaced
+-- This file contain a variable "${organismImportTable}" which must be replaced
 -- with "sed" before passing the updated content to psql.
 
 \echo '-------------------------------------------------------------------------------'
@@ -12,17 +12,24 @@ SET client_encoding = 'UTF8';
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Batch updating in "bib_organismes" of the imported organisms'
--- TODO : set stopAt with a "SELECT COUNT(*) FROM :gn_imports.:organismsImportTable" query.
--- TODO: find a better field than nom_organisme to link because it must be updated too !
 DO $$
 DECLARE
-    step INTEGER := 1000 ;
-    stopAt INTEGER := 1000 ;
+    step INTEGER ;
+    stopAt INTEGER ;
     offsetCnt INTEGER := 0 ;
     affectedRows INTEGER;
 BEGIN
+    -- Set dynamicly stopAt and step
+    stopAt := gn_imports.computeImportTotal('gn_imports.${organismImportTable}', 'U') ;
+    step := gn_imports.computeImportStep(stopAt) ;
+    RAISE NOTICE 'Total found: %, step used: %', stopAt, step ;
+
     RAISE NOTICE 'Start to loop on data to update in "bib_organismes" table' ;
     WHILE offsetCnt < stopAt LOOP
+
+        RAISE NOTICE '-------------------------------------------------' ;
+        RAISE NOTICE 'Try to update % organisms from %', step, offsetCnt ;
+
         UPDATE utilisateurs.bib_organismes AS bo SET
             uuid_organisme = oit.unique_id,
             nom_organisme = oit.name,
@@ -46,23 +53,26 @@ BEGIN
                 email,
                 organism_url,
                 logo_url
-            FROM gn_imports.${organismsImportTable}
+            FROM gn_imports.${organismImportTable}
             WHERE meta_last_action = 'U'
             ORDER BY gid ASC
             LIMIT step
             OFFSET offsetCnt
         ) AS oit
-        WHERE oit.name = bo.nom_organisme ;
+        WHERE ( -- TODO: check if OR below is a good idea or not !
+                oit.name = bo.nom_organisme
+                OR
+                oit.unique_id = bo.uuid_organisme
+            ) ;
 
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Update affected rows: %', affectedRows ;
 
         offsetCnt := offsetCnt + (step) ;
-        RAISE NOTICE 'offsetCnt: %', offsetCnt ;
-
     END LOOP ;
 END
 $$ ;
+
 
 \echo '----------------------------------------------------------------------------'
 \echo 'COMMIT if all is ok:'

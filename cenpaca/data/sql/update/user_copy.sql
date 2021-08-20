@@ -10,12 +10,12 @@ SET client_encoding = 'UTF8';
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Remove imports users table if already exists'
-DROP TABLE IF EXISTS gn_imports.:usersImportTable ;
+DROP TABLE IF EXISTS gn_imports.:userImportTable ;
 
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Create imports users table from "t_roles" with additional fields'
-CREATE TABLE gn_imports.:usersImportTable AS
+CREATE TABLE gn_imports.:userImportTable AS
     SELECT
         NULL::INT AS gid,
         uuid_role AS unique_id,
@@ -36,39 +36,39 @@ WITH NO DATA ;
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Add primary key on imports users table'
-\set importTablePk 'pk_':usersImportTable
-ALTER TABLE gn_imports.:usersImportTable
+\set importTablePk 'pk_':userImportTable
+ALTER TABLE gn_imports.:userImportTable
 	ALTER COLUMN gid ADD GENERATED ALWAYS AS IDENTITY,
 	ADD CONSTRAINT :importTablePk PRIMARY KEY(gid);
 
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Create indexes on imports users table'
-\set identifierIdx 'idx_unique_':usersImportTable'_identifier'
+\set identifierIdx 'idx_unique_':userImportTable'_identifier'
 CREATE UNIQUE INDEX :identifierIdx
-    ON gn_imports.:usersImportTable USING btree (identifier);
+    ON gn_imports.:userImportTable USING btree (identifier);
 
-\set uniqueIdIdx 'idx_unique_':usersImportTable'_unique_id'
+\set uniqueIdIdx 'idx_unique_':userImportTable'_unique_id'
 CREATE UNIQUE INDEX :uniqueIdIdx
-    ON gn_imports.:usersImportTable USING btree (unique_id);
+    ON gn_imports.:userImportTable USING btree (unique_id);
 
-\set updateDateIdx 'idx_':usersImportTable'_meta_update_date'
+\set updateDateIdx 'idx_':userImportTable'_meta_update_date'
 CREATE INDEX :updateDateIdx
-    ON gn_imports.:usersImportTable USING btree (meta_update_date);
+    ON gn_imports.:userImportTable USING btree (meta_update_date);
 
-\set lastActionIdx 'idx_':usersImportTable'_meta_last_action'
+\set lastActionIdx 'idx_':userImportTable'_meta_last_action'
 CREATE INDEX :lastActionIdx
-    ON gn_imports.:usersImportTable USING btree (meta_last_action);
+    ON gn_imports.:userImportTable USING btree (meta_last_action);
 
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Attribute imports organisms to GeoNature DB owner'
-ALTER TABLE gn_imports.:usersImportTable OWNER TO :gnDbOwner ;
+ALTER TABLE gn_imports.:userImportTable OWNER TO :gnDbOwner ;
 
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Copy CVS file to import organisms table'
-COPY gn_imports.:usersImportTable (
+COPY gn_imports.:userImportTable (
     unique_id,
     identifier,
     firstname,

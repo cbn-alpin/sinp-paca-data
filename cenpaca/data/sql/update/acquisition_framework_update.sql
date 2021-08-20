@@ -12,19 +12,25 @@ SET client_encoding = 'UTF8';
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Batch updating in "t_acquisition_frameworks" of the imported acquisition frameworks'
--- TODO : set stopAt with a "SELECT COUNT(*) FROM :gn_imports.${afImportTable}" query.
--- TODO: find a better field than name to link because it must be updated too !
 DO $$
 DECLARE
-    step INTEGER := 1000 ;
-    stopAt INTEGER := 1000 ;
+    step INTEGER ;
+    stopAt INTEGER ;
     offsetCnt INTEGER := 0 ;
     affectedRows INTEGER;
 BEGIN
+    -- Set dynamicly stopAt and step
+    stopAt := gn_imports.computeImportTotal('gn_imports.${afImportTable}', 'U') ;
+    step := gn_imports.computeImportStep(stopAt) ;
+    RAISE NOTICE 'Total found: %, step used: %', stopAt, step ;
+
     RAISE NOTICE 'Start to loop on data to update in "t_acquisition_frameworks" table' ;
     WHILE offsetCnt < stopAt LOOP
 
-        RAISE NOTICE '-------------------------------------------------------------------------------' ;
+        RAISE NOTICE '-------------------------------------------------' ;
+        RAISE NOTICE 'Try to update % acquisition frameworks from %', step, offsetCnt ;
+
+        RAISE NOTICE '-------------------------------------------------' ;
         RAISE NOTICE 'Updating PARENT acquisition frameworks...' ;
         UPDATE gn_meta.t_acquisition_frameworks AS taf SET
             unique_acquisition_framework_id = afit.unique_id,
@@ -75,7 +81,7 @@ BEGIN
         RAISE NOTICE 'Updated PARENT acquisition frameworks rows: %', affectedRows ;
 
 
-        RAISE NOTICE '-------------------------------------------------------------------------------' ;
+        RAISE NOTICE '-------------------------------------------------' ;
         RAISE NOTICE 'Updating CHILDREN acquisition frameworks...' ;
         UPDATE gn_meta.t_acquisition_frameworks AS taf SET
             unique_acquisition_framework_id = afit.unique_id,
@@ -131,7 +137,7 @@ BEGIN
         RAISE NOTICE 'Updated CHILDREN acquisition frameworks rows: %', affectedRows ;
 
 
-        RAISE NOTICE '-------------------------------------------------------------------------------' ;
+        RAISE NOTICE '-------------------------------------------------' ;
         RAISE NOTICE 'Deletion of "Volets SINP" links...' ;
         DELETE FROM ONLY gn_meta.cor_acquisition_framework_voletsinp
         WHERE id_acquisition_framework IN (
@@ -170,7 +176,7 @@ BEGIN
         RAISE NOTICE 'Inserted "Volets SINP" link rows: %', affectedRows ;
 
 
-        RAISE NOTICE '-------------------------------------------------------------------------------' ;
+        RAISE NOTICE '-------------------------------------------------' ;
         RAISE NOTICE 'Deletion of "objectifs" links...' ;
         DELETE FROM ONLY gn_meta.cor_acquisition_framework_objectif
         WHERE id_acquisition_framework IN (
@@ -209,7 +215,7 @@ BEGIN
         RAISE NOTICE 'Inserted "objectifs" link rows: %', affectedRows ;
 
 
-        RAISE NOTICE '-------------------------------------------------------------------------------' ;
+        RAISE NOTICE '-------------------------------------------------' ;
         RAISE NOTICE 'Deletion of "actors" links...' ;
         DELETE FROM ONLY gn_meta.cor_acquisition_framework_actor
         WHERE id_acquisition_framework IN (
@@ -272,7 +278,7 @@ BEGIN
         RAISE NOTICE 'Inserted "actor => USER" link rows: %', affectedRows ;
 
 
-        RAISE NOTICE '-------------------------------------------------------------------------------' ;
+        RAISE NOTICE '-------------------------------------------------' ;
         RAISE NOTICE 'Updating existing publications' ;
         UPDATE gn_meta.sinp_datatype_publications AS sdp SET
             unique_publication_id = pub.uuid,
@@ -391,8 +397,6 @@ BEGIN
 
 
         offsetCnt := offsetCnt + (step) ;
-        RAISE NOTICE 'offsetCnt: %', offsetCnt ;
-
     END LOOP ;
 END
 $$ ;

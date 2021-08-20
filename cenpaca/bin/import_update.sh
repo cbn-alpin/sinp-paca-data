@@ -68,50 +68,69 @@ function main() {
     # Start script
     printInfo "${app_name} script started at: ${fmt_time_start}"
 
-    buildTablePrefix
     downloadCenpacaDataArchive
     extractArchive
     prepareDb
 
-    if [[ -f "${raw_dir}/${cp_filename_source}" ]]; then
-        copySource
-        updateSource
-    fi
-    if [[ -f "${raw_dir}/${cp_filename_organism}" ]]; then
-        copyOrganism
-        updateOrganism
-    fi
-    if [[ -f "${raw_dir}/${cp_filename_user}" ]]; then
-        copyUser
-        updateUser
-    fi
-    if [[ -f "${raw_dir}/${cp_filename_af}" ]]; then
-        copyAcquisitionFramework
-        updateAcquisitionFramework
-    fi
-    exitScript "Testing..."
-    if [[ -f "${raw_dir}/${cp_filename_dataset}" ]]; then
-        copyDataset
-        updateDataset
-    fi
-    if [[ -f "${raw_dir}/${cp_filename_synthese}" ]]; then
-        copySynthese
-        updateSynthese
-    fi
+    buildTablePrefix
 
-    maintainDb
+    parseCsv "source" "so"
+    executeCopy "source"
+    displayStats "source"
+    executeUpgradeScript "source" "insert"
+    executeUpgradeScript "source" "update"
+
+    parseCsv "organism" "o"
+    executeCopy "organism"
+    displayStats "organism"
+    executeUpgradeScript "organism" "insert"
+    executeUpgradeScript "organism" "update"
+
+    parseCsv "user" "u"
+    executeCopy "user"
+    displayStats "user"
+    executeUpgradeScript "user" "insert"
+    executeUpgradeScript "user" "update"
+
+    parseCsv "acquisition framework" "af"
+    executeCopy "acquisition framework"
+    displayStats "acquisition framework"
+    executeUpgradeScript "acquisition framework" "insert"
+    executeUpgradeScript "acquisition framework" "update"
+
+    parseCsv "dataset" "d"
+    executeCopy "dataset"
+    displayStats "dataset"
+    executeUpgradeScript "dataset" "insert"
+    executeUpgradeScript "dataset" "update"
+
+    parseCsv "synthese" "s"
+    executeCopy "synthese"
+    displayStats "synthese"
+    executeUpgradeScript "synthese" "insert"
+    executeUpgradeScript "synthese" "update"
+    executeUpgradeScript "synthese" "delete"
+
+    executeUpgradeScript "dataset" "delete"
+    executeUpgradeScript "acquisition framework" "delete"
+    executeUpgradeScript "user" "delete"
+    executeUpgradeScript "organism" "delete"
+    executeUpgradeScript "source" "delete"
+
+    printPretty "Are you sure to run maitain DB SQL script wich lock database (y/n). Default: n ?" ${Red}
+    read -r -n 1 key
+    echo # Move to a new line
+    if [[ "${key}" =~ ^[Yy]$ ]]; then
+        maintainDb
+    fi
 
     #+----------------------------------------------------------------------------------------------------------+
     # Display script execution infos
     displayTimeElapsed
 }
 
-function buildTablePrefix() {
-    table_prefix="${app_code}_${cp_import_date//-/}"
-}
-
 function downloadCenpacaDataArchive() {
-    printMsg "Downloading CEN-PACA data archive..."
+    printMsg "Download CEN-PACA data archive..."
 
     if [[ ! -f "${raw_dir}/${cp_filename_archive}" ]]; then
         curl -X POST https://content.dropboxapi.com/2/files/download \
@@ -124,7 +143,7 @@ function downloadCenpacaDataArchive() {
 }
 
 function extractArchive() {
-    printMsg "Extracting import data CSV files..."
+    printMsg "Extract import data CSV files..."
 
     if [[ -f "${raw_dir}/${cp_filename_archive}" ]]; then
         if [[ ! -f "${raw_dir}/${cp_filename_synthese}" ]]; then
@@ -137,17 +156,105 @@ function extractArchive() {
 }
 
 function prepareDb() {
-    printMsg "Inserting utils functions into GeoNature database..."
+    printMsg "Insert utils functions into GeoNature database..."
     export PGPASSWORD="${db_pass}"; \
         psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
             -f "${sql_shared_dir}/utils_functions.sql"
 }
 
-function displayStats() {
-    local data_type="${1// /_}"
-    local table="${table_prefix}_${data_type,,}"
+function buildTablePrefix() {
+    table_prefix="${app_code}_${cp_import_date//-/}"
+}
 
-    printMsg "Display ${data_type^^} stats..."
+function parseCsv() {
+    if [[ $# -lt 2 ]]; then
+        exitScript "Missing required argument to ${FUNCNAME[0]}()!" 2
+    fi
+
+    local type="${1,,}"
+    local type_abbr="${2,,}"
+
+    local data_type="${type// /_}"
+    local data_type_abbr=$(echo "${type}" | sed 's/\(.\)[^ ]* */\1/g')
+    if [[ "${#data_type_abbr}" = "1" ]]; then
+        data_type_abbr="${data_type}"
+    fi
+    declare -n csv_file="cp_filename_${data_type_abbr}"
+    local csv_to_import="${csv_file%.csv}_rti.csv"
+
+    # Exit if CSV file not found
+    if ! [[ -f "${raw_dir}/${csv_file}" ]]; then
+        return 0
+    fi
+
+    printMsg "Parse ${type^^} CSV file..."
+    if [[ ! -f "${raw_dir}/${csv_to_import}" ]]; then
+        cd "${root_dir}/import-parser/"
+        pipenv run python ./bin/gn_import_parser.py \
+            --type "${type_abbr}" \
+            --config "${conf_dir}/parser_actions_update.ini" \
+            "${raw_dir}/${csv_file}"
+    else
+        printVerbose "${type^^} CSV file already parsed." ${Gra}
+    fi
+}
+
+function executeCopy() {
+    if [[ $# -lt 1 ]]; then
+        exitScript "Missing required argument to ${FUNCNAME[0]}()!" 2
+    fi
+
+    local type="${1,,}"
+
+    local data_type="${type// /_}"
+    local data_type_abbr=$(echo "${type}" | sed 's/\(.\)[^ ]* */\1/g')
+    if [[ "${#data_type_abbr}" = "1" ]]; then
+        data_type_abbr="${data_type}"
+    fi
+    declare -n csv_file="cp_filename_${data_type_abbr}"
+    local csv_to_import="${csv_file%.csv}_rti.csv"
+
+    # Exit if CSV file not found
+    if ! [[ -f "${raw_dir}/${csv_file}" ]]; then
+        return 0
+    fi
+
+    local table="${table_prefix}_${data_type}"
+    local sql_file="${sql_dir}/update/${data_type}_copy.sql"
+    local psql_var="${data_type_abbr}ImportTable"
+
+    printMsg "Copy ${type^^} in GeoNature database..."
+    checkSuperuser
+    sudo -n -u "${pg_admin_name}" -s \
+        psql -d "${db_name}" \
+            -v "${psql_var}=${table}" \
+            -v gnDbOwner="${db_user}" \
+            -v csvFilePath="${raw_dir}/${csv_to_import}" \
+            -f "${sql_file}"
+}
+
+function displayStats() {
+    if [[ $# -lt 1 ]]; then
+        exitScript "Missing required argument to ${FUNCNAME[0]}()!" 2
+    fi
+
+    local type="${1,,}"
+
+    local data_type="${type// /_}"
+    local table="${table_prefix}_${data_type}"
+    local data_type="${type// /_}"
+    local data_type_abbr=$(echo "${type}" | sed 's/\(.\)[^ ]* */\1/g')
+    if [[ "${#data_type_abbr}" = "1" ]]; then
+        data_type_abbr="${data_type}"
+    fi
+    declare -n csv_file="cp_filename_${data_type_abbr}"
+
+    # Exit if CSV file not found
+    if ! [[ -f "${raw_dir}/${csv_file}" ]]; then
+        return 0
+    fi
+
+    printMsg "Display ${type^^} stats..."
     export PGPASSWORD="${db_pass}"; \
         psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
             -v importTable="${table}" \
@@ -155,282 +262,36 @@ function displayStats() {
 
 }
 
-function copySource() {
-    local csv_to_import="${cp_filename_source%.csv}_rti.csv"
-
-    printMsg "Parsing SOURCE CSV file..."
-    if [[ ! -f "${raw_dir}/${csv_to_import}" ]]; then
-        cd "${root_dir}/import-parser/"
-        pipenv run python ./bin/gn_import_parser.py \
-            --type "so" \
-            --config "${conf_dir}/parser_actions_update.ini" \
-            "${raw_dir}/${cp_filename_source}"
-    else
-        printVerbose "SOURCE CSV file already parsed." ${Gra}
+function executeUpgradeScript() {
+    if [[ $# -lt 2 ]]; then
+        exitScript "Missing required argument to ${FUNCNAME[0]}()!" 2
     fi
 
-    printMsg "Importing SOURCES in GeoNature database..."
-    checkSuperuser
-    sudo -n -u "${pg_admin_name}" -s \
-        psql -d "${db_name}" \
-            -v sourcesImportTable="${table_prefix}_sources" \
-            -v gnDbOwner="${db_user}" \
-            -v csvFilePath="${raw_dir}/${csv_to_import}" \
-            -f "${sql_dir}/update/001_source_copy.sql"
-}
+    local type="${1,,}"
+    local action="${2,,}"
 
-function updateSource() {
-    local table="${table_prefix}_sources"
+    local data_type="${type// /_}"
+    local data_type_abbr=$(echo "${type}" | sed 's/\(.\)[^ ]* */\1/g')
+    if [[ "${#data_type_abbr}" = "1" ]]; then
+        data_type_abbr="${data_type}"
+    fi
+    declare -n csv_file="cp_filename_${data_type_abbr}"
 
-    displayStats "SOURCES"
-
-    printMsg "Deleting SOURCES in destination table..."
-    export PGPASSWORD="${db_pass}"; \
-        sed "s/\${sourcesImportTable}/${table}/g" "${sql_dir}/update/002_source_delete.sql" | \
-        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -v sourcesImportTable="${table}" \
-            -f -
-
-    printMsg "Updating SOURCES in destination table..."
-    export PGPASSWORD="${db_pass}"; \
-        sed "s/\${sourcesImportTable}/${table}/g" "${sql_dir}/update/003_source_update.sql" | \
-        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -v sourcesImportTable="${table}" \
-            -f -
-
-    printMsg "Inserting SOURCES in destination table..."
-    export PGPASSWORD="${db_pass}"; \
-        sed "s/\${sourcesImportTable}/${table}/g" "${sql_dir}/update/004_source_insert.sql" | \
-        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -v sourcesImportTable="${table}" \
-            -f -
-}
-
-function copyOrganism() {
-    local csv_to_import="${cp_filename_organism%.csv}_rti.csv"
-
-    printMsg "Parsing ORGANISM CSV file..."
-    if [[ ! -f "${raw_dir}/${csv_to_import}" ]]; then
-        cd "${root_dir}/import-parser/"
-        pipenv run python ./bin/gn_import_parser.py \
-            --type "o" \
-            --config "${conf_dir}/parser_actions_update.ini" \
-            "${raw_dir}/${cp_filename_organism}"
-    else
-        printVerbose "ORGANISM CSV file already parsed." ${Gra}
+    # Exit if CSV file not found
+    if ! [[ -f "${raw_dir}/${csv_file}" ]]; then
+        return 0
     fi
 
-    printMsg "Importing ORGANISMS in GeoNature database..."
-    checkSuperuser
-    sudo -n -u "${pg_admin_name}" -s \
-        psql -d "${db_name}" \
-            -v organismsImportTable="${table_prefix}_organisms" \
-            -v gnDbOwner="${db_user}" \
-            -v csvFilePath="${raw_dir}/${csv_to_import}" \
-            -f "${sql_dir}/update/005_organism_copy.sql"
-}
+    local table="${table_prefix}_${data_type}"
+    local sql_file="${sql_dir}/update/${data_type}_${action}.sql"
+    local psql_var="${data_type_abbr}ImportTable"
 
-function updateOrganism() {
-    local table="${table_prefix}_organisms"
-
-    displayStats "ORGANISMS"
-
-    printMsg "Deleting ORGANISMS in destination table..."
+    printMsg "${action^} ${type^^} in destination table..."
     export PGPASSWORD="${db_pass}"; \
-        sed "s/\${organismsImportTable}/${table}/g" "${sql_dir}/update/006_organism_delete.sql" | \
+        sed "s/\${${psql_var}}/${table}/g" "${sql_file}" | \
         psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -v organismsImportTable="${table}" \
+            -v "${psql_var}=${table}" \
             -f -
-
-    printMsg "Updating ORGANISMS in destination table..."
-    export PGPASSWORD="${db_pass}"; \
-        sed "s/\${organismsImportTable}/${table}/g" "${sql_dir}/update/007_organism_update.sql" | \
-        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -v organismsImportTable="${table}" \
-            -f -
-
-    printMsg "Inserting ORGANISMS in destination table..."
-    export PGPASSWORD="${db_pass}"; \
-        sed "s/\${organismsImportTable}/${table}/g" "${sql_dir}/update/008_organism_insert.sql" | \
-        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -v organismsImportTable="${table}" \
-            -f -
-}
-
-function copyUser() {
-    local csv_to_import="${cp_filename_user%.csv}_rti.csv"
-
-    printMsg "Parsing USER CSV file..."
-    if [[ ! -f "${raw_dir}/${csv_to_import}" ]]; then
-        cd "${root_dir}/import-parser/"
-        pipenv run python ./bin/gn_import_parser.py \
-            --type "u" \
-            --config "${conf_dir}/parser_actions_update.ini" \
-            "${raw_dir}/${cp_filename_user}"
-    else
-        printVerbose "USER CSV file already parsed." ${Gra}
-    fi
-
-    printMsg "Inserting USER in GeoNature database..."
-    checkSuperuser
-    sudo -n -u "${pg_admin_name}" -s \
-        psql -d "${db_name}" \
-            -v usersImportTable="${table_prefix}_users" \
-            -v gnDbOwner="${db_user}" \
-            -v csvFilePath="${raw_dir}/${csv_to_import}" \
-            -f "${sql_dir}/update/009_user_copy.sql"
-}
-
-function updateUser() {
-    local table="${table_prefix}_users"
-
-    displayStats "USERS"
-
-    printMsg "Deleting USERS in destination table..."
-    export PGPASSWORD="${db_pass}"; \
-        sed "s/\${usersImportTable}/${table}/g" "${sql_dir}/update/010_user_delete.sql" | \
-        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -v usersImportTable="${table}" \
-            -f -
-
-    printMsg "Updating USERS in destination table..."
-    export PGPASSWORD="${db_pass}"; \
-        sed "s/\${usersImportTable}/${table}/g" "${sql_dir}/update/011_user_update.sql" | \
-        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -v usersImportTable="${table}" \
-            -f -
-
-    printMsg "Inserting USERS in destination table..."
-    export PGPASSWORD="${db_pass}"; \
-        sed "s/\${usersImportTable}/${table}/g" "${sql_dir}/update/012_user_insert.sql" | \
-        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -v usersImportTable="${table}" \
-            -f -
-}
-
-function copyAcquisitionFramework() {
-    local csv_to_import="${cp_filename_af%.csv}_rti.csv"
-
-    printMsg "Parsing ACQUISITION FRAMEWORK CSV file..."
-    if [[ ! -f "${raw_dir}/${csv_to_import}" ]]; then
-        cd "${root_dir}/import-parser/"
-        pipenv run python ./bin/gn_import_parser.py \
-            --type "af" \
-            --config "${conf_dir}/parser_actions_update.ini" \
-            "${raw_dir}/${cp_filename_af}"
-    else
-        printVerbose "ACQUISITION FRAMEWORK CSV file already parsed." ${Gra}
-    fi
-
-    printMsg "Inserting ACQUISITION FRAMEWORK in GeoNature database..."
-    checkSuperuser
-    sudo -n -u "${pg_admin_name}" -s \
-        psql -d "${db_name}" \
-            -v afImportTable="${table_prefix}_acquisition_frameworks" \
-            -v gnDbOwner="${db_user}" \
-            -v csvFilePath="${raw_dir}/${csv_to_import}" \
-            -f "${sql_dir}/update/013_acquisition_framework_copy.sql"
-}
-
-function updateAcquisitionFramework() {
-    local table="${table_prefix}_acquisition_frameworks"
-
-    displayStats "ACQUISITION FRAMEWORKS"
-
-    printMsg "Deleting ACQUISITION FRAMEWORK in destination table..."
-    export PGPASSWORD="${db_pass}"; \
-        sed "s/\${afImportTable}/${table}/g" "${sql_dir}/update/014_acquisition_framework_delete.sql" | \
-        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -v afImportTable="${table}" \
-            -f -
-
-    printMsg "Updating ACQUISITION FRAMEWORK in destination table..."
-    export PGPASSWORD="${db_pass}"; \
-        sed "s/\${afImportTable}/${table}/g" "${sql_dir}/update/015_acquisition_framework_update.sql" | \
-        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -v afImportTable="${table}" \
-            -f -
-
-    printMsg "Inserting ACQUISITION FRAMEWORK in destination table..."
-    export PGPASSWORD="${db_pass}"; \
-        sed "s/\${afImportTable}/${table}/g" "${sql_dir}/update/016_acquisition_framework_insert.sql" | \
-        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -v afImportTable="${table}" \
-            -f -
-}
-
-function insertDataset() {
-    local csv_to_import="${cp_filename_dataset%.csv}_rti.csv"
-
-    printMsg "Parsing DATASET CSV file..."
-    if [[ ! -f "${raw_dir}/${csv_to_import}" ]]; then
-        cd "${root_dir}/import-parser/"
-        pipenv run python ./bin/gn_import_parser.py \
-            --type "d" \
-            --config "${conf_dir}/parser_actions.ini" \
-            "${raw_dir}/${cp_filename_dataset}"
-    else
-        printVerbose "DATASET CSV file already parsed." ${Gra}
-    fi
-
-    printMsg "Inserting DATASET data into GeoNature database..."
-    checkSuperuser
-    sudo -n -u "${pg_admin_name}" -s \
-        psql -d "${db_name}" \
-            -v gnDbOwner="${db_user}" \
-            -v csvFilePath="${raw_dir}/${csv_to_import}" \
-            -f "${sql_dir}/initial/005_copy_dataset.sql"
-}
-
-function prepareSynthese() {
-    printMsg "Preparing GeoNature database before deleting data into syntese table ..."
-    export PGPASSWORD="${db_pass}"; \
-        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -f "${sql_shared_dir}/synthese_before_delete.sql"
-
-    printMsg "Deleting previously loaded synthese data with this sources..."
-    export PGPASSWORD="${db_pass}"; \
-        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -f "${sql_dir}/initial/006_prepare_synthese.sql"
-
-    printMsg "Restoring GeoNature database after deleting data into syntese table ..."
-    export PGPASSWORD="${db_pass}"; \
-        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -f "${sql_shared_dir}/synthese_after_delete.sql"
-}
-
-function insertSynthese() {
-    local csv_to_import="${cp_filename_synthese%.csv}_rti.csv"
-
-    printMsg "Parsing SYNTHESE CSV file..."
-    if [[ ! -f "${raw_dir}/${csv_to_import}" ]]; then
-        cd "${root_dir}/import-parser/"
-        pipenv run python ./bin/gn_import_parser.py \
-            --type "s" \
-            --config "${conf_dir}/parser_actions.ini" \
-            "${raw_dir}/${cp_filename_synthese}"
-    else
-        printVerbose "SYNTHESE CSV file already parsed." ${Gra}
-    fi
-
-    printMsg "Preparing GeoNature database before inserting data into syntese table ..."
-    checkSuperuser
-    sudo -n -u "${pg_admin_name}" -s \
-        psql -d "${db_name}" \
-            -f "${sql_shared_dir}/synthese_before_insert.sql"
-
-    printMsg "Inserting synthese data into GeoNature database..."
-    checkSuperuser
-    sudo -n -u "${pg_admin_name}" -s \
-        psql -d "${db_name}" \
-            -v csvFilePath="${raw_dir}/${csv_to_import}" \
-            -f "${sql_dir}/initial/007_copy_synthese.sql"
-
-    printMsg "Restoring GeoNature database after inserting data into syntese table ..."
-    checkSuperuser
-    sudo -n -u "${pg_admin_name}" -s \
-        psql -d "${db_name}" \
-            -f "${sql_shared_dir}/synthese_after_insert.sql"
 }
 
 function maintainDb() {

@@ -1,5 +1,5 @@
 BEGIN;
--- This file contain a variable "${sourcesImportTable}"" which must be replaced
+-- This file contain a variable "${sourceImportTable}"" which must be replaced
 -- with "sed" before passing the updated content to psql.
 
 \echo '-------------------------------------------------------------------------------'
@@ -12,17 +12,26 @@ SET client_encoding = 'UTF8';
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Batch updating of the source data imported into "t_sources"'
--- TODO : set stopAt with a "SELECT COUNT(*) FROM :gn_imports.:sourcesImportTable" query.
 -- TODO: find a better field than name_source to link because it must be updated too !
 DO $$
 DECLARE
-    step INTEGER := 1000 ;
-    stopAt INTEGER := 1000 ;
+    step INTEGER ;
+    stopAt INTEGER ;
     offsetCnt INTEGER := 0 ;
     affectedRows INTEGER;
 BEGIN
+    -- Set dynamicly stopAt and step
+    stopAt := gn_imports.computeImportTotal('gn_imports.${sourceImportTable}', 'U') ;
+    step := gn_imports.computeImportStep(stopAt) ;
+    RAISE NOTICE 'Total found: %, step used: %', stopAt, step ;
+
+
     RAISE NOTICE 'Start to loop on data to update in "t_sources" table' ;
     WHILE offsetCnt < stopAt LOOP
+
+        RAISE NOTICE '-------------------------------------------------' ;
+        RAISE NOTICE 'Try to update % sources from %', step, offsetCnt ;
+
         UPDATE gn_synthese.t_sources AS ts SET
             name_source = sit.name_source,
             desc_source = sit.desc_source,
@@ -38,7 +47,7 @@ BEGIN
                 url_source,
                 meta_create_date,
                 meta_update_date
-            FROM gn_imports.${sourcesImportTable}
+            FROM gn_imports.${sourceImportTable}
             WHERE meta_last_action = 'U'
             ORDER BY gid ASC
             LIMIT step
@@ -51,11 +60,10 @@ BEGIN
         RAISE NOTICE 'Update affected rows: %', affectedRows ;
 
         offsetCnt := offsetCnt + (step) ;
-        RAISE NOTICE 'offsetCnt: %', offsetCnt ;
-
     END LOOP ;
 END
 $$ ;
+
 
 \echo '----------------------------------------------------------------------------'
 \echo 'COMMIT if all is ok:'

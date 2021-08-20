@@ -12,18 +12,24 @@ SET client_encoding = 'UTF8';
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Batch deletion in "t_acquisition_frameworks" of the imported acquisition frameworks'
--- TODO : set stopAt with a "SELECT COUNT(*) FROM gn_imports.${afImportTable}" query.
--- TODO: find a better field than name to link because it must be updated too !
 -- TODO: delete cascade or not ?
 DO $$
 DECLARE
-    step INTEGER := 1000 ;
-    stopAt INTEGER := 1000 ;
+    step INTEGER ;
+    stopAt INTEGER ;
     offsetCnt INTEGER := 0 ;
     affectedRows INTEGER;
 BEGIN
+    -- Set dynamicly stopAt and step
+    stopAt := gn_imports.computeImportTotal('gn_imports.${afImportTable}', 'D') ;
+    step := gn_imports.computeImportStep(stopAt) ;
+    RAISE NOTICE 'Total found: %, step used: %', stopAt, step ;
+
     RAISE NOTICE 'Start to loop on data to delete in "t_acquisition_frameworks" table' ;
     WHILE offsetCnt < stopAt LOOP
+
+        RAISE NOTICE '-------------------------------------------------' ;
+        RAISE NOTICE 'Try to delete % acquisition frameworks from %', step, offsetCnt ;
 
         RAISE NOTICE 'Deletion of "Volets SINP" links...' ;
         DELETE FROM ONLY gn_meta.cor_acquisition_framework_voletsinp
@@ -41,6 +47,7 @@ BEGIN
             LIMIT step
             OFFSET offsetCnt
         ) ;
+
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Removed "Volets SINP" link rows: %', affectedRows ;
 
@@ -61,6 +68,7 @@ BEGIN
             LIMIT step
             OFFSET offsetCnt
         ) ;
+
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Removed "objectifs" link rows: %', affectedRows ;
 
@@ -81,6 +89,7 @@ BEGIN
             LIMIT step
             OFFSET offsetCnt
         ) ;
+
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Removed "actors" link rows: %', affectedRows ;
 
@@ -101,6 +110,7 @@ BEGIN
             LIMIT step
             OFFSET offsetCnt
         ) ;
+
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Removed "publications" link rows: %', affectedRows ;
 
@@ -127,27 +137,29 @@ BEGIN
                 SELECT DISTINCT id_publication
                 FROM gn_meta.cor_acquisition_framework_publication
             );
+
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Removed "publications" rows: %', affectedRows ;
 
 
         RAISE NOTICE 'Deletion of acquisition frameworks...' ;
-        DELETE FROM ONLY gn_meta.t_acquisition_frameworks
-        WHERE acquisition_framework_name IN (
-            SELECT name
+        WITH af_to_delete AS (
+            SELECT name, unique_id
             FROM gn_imports.${afImportTable}
             WHERE meta_last_action = 'D'
             ORDER BY gid ASC
             LIMIT step
             OFFSET offsetCnt
-        ) ;
+        )
+        DELETE FROM ONLY gn_meta.t_acquisition_frameworks
+        WHERE acquisition_framework_name IN (SELECT name FROM af_to_delete)
+            OR unique_acquisition_framework_id IN (SELECT unique_id FROM af_to_delete) ;
+
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Removed "acquisition frameworks" rows: %', affectedRows ;
 
 
         offsetCnt := offsetCnt + (step) ;
-        RAISE NOTICE 'offsetCnt: %', offsetCnt ;
-
     END LOOP ;
 END
 $$ ;

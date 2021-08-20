@@ -11,19 +11,25 @@ SET client_encoding = 'UTF8';
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Batch updating in "t_acquisition_frameworks" of the imported acquisition frameworks'
--- TODO : set stopAt with a "SELECT COUNT(*) FROM :gn_imports.${afImportTable}" query.
--- TODO: find a better field than name to link because it must be updated too !
 DO $$
 DECLARE
-    step INTEGER := 1000 ;
-    stopAt INTEGER := 1000 ;
+    step INTEGER ;
+    stopAt INTEGER ;
     offsetCnt INTEGER := 0 ;
     affectedRows INTEGER;
 BEGIN
+    -- Set dynamicly stopAt and step
+    stopAt := gn_imports.computeImportTotal('gn_imports.${afImportTable}', 'I') ;
+    step := gn_imports.computeImportStep(stopAt) ;
+    RAISE NOTICE 'Total found: %, step used: %', stopAt, step ;
+
     RAISE NOTICE 'Start to loop on data to insert in "t_acquisition_frameworks" table' ;
     WHILE offsetCnt < stopAt LOOP
 
-        RAISE NOTICE '-------------------------------------------------------------------------------' ;
+        RAISE NOTICE '-------------------------------------------------' ;
+        RAISE NOTICE 'Try to insert % acquisition frameworks from %', step, offsetCnt ;
+
+        RAISE NOTICE '-------------------------------------------------' ;
         RAISE NOTICE 'Inserting PARENT acquisition frameworks data to "t_acquisition_frameworks" if not exist' ;
         INSERT INTO gn_meta.t_acquisition_frameworks (
             unique_acquisition_framework_id,
@@ -68,13 +74,15 @@ BEGIN
             AND afit.is_parent = True
             AND afit.meta_last_action = 'I'
         ORDER BY afit.gid ASC
-        LIMIT step
-        OFFSET offsetCnt ;
+        -- With NOT EXISTS don't use OFFSET because it's eliminate previously inserted rows.
+        -- OFFSET offsetCnt
+        LIMIT step ;
+
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Inserted PARENT acquistion frameworks rows: %', affectedRows ;
 
 
-        RAISE NOTICE '-------------------------------------------------------------------------------' ;
+        RAISE NOTICE '-------------------------------------------------' ;
         RAISE NOTICE 'Inserting CHILDREN acquisition frameworks data to "t_acquisition_frameworks" if not exist' ;
         INSERT INTO gn_meta.t_acquisition_frameworks (
             unique_acquisition_framework_id,
@@ -124,13 +132,14 @@ BEGIN
             AND afit.is_parent = False
             AND afit.meta_last_action = 'I'
         ORDER BY afit.gid ASC
-        LIMIT step
-        OFFSET offsetCnt ;
+        -- With NOT EXISTS don't use OFFSET because it's eliminate previously inserted rows.
+        -- OFFSET offsetCnt
+        LIMIT step ;
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Inserted CHILDREN acquistion frameworks rows: %', affectedRows ;
 
 
-        RAISE NOTICE '-------------------------------------------------------------------------------' ;
+        RAISE NOTICE '-------------------------------------------------' ;
         RAISE NOTICE 'Insert link between acquisition framework and "SINP volets"' ;
         INSERT INTO gn_meta.cor_acquisition_framework_voletsinp (
             id_acquisition_framework,
@@ -149,7 +158,7 @@ BEGIN
         RAISE NOTICE 'Inserted "SINP volets" link rows: %', affectedRows ;
 
 
-        RAISE NOTICE '-------------------------------------------------------------------------------' ;
+        RAISE NOTICE '-------------------------------------------------' ;
         RAISE NOTICE 'Insert link between acquisition framework and objectifs' ;
         INSERT INTO gn_meta.cor_acquisition_framework_objectif (
             id_acquisition_framework,
@@ -168,7 +177,7 @@ BEGIN
         RAISE NOTICE 'Inserted "objectifs" link rows: %', affectedRows ;
 
 
-        RAISE NOTICE '-------------------------------------------------------------------------------' ;
+        RAISE NOTICE '-------------------------------------------------' ;
         RAISE NOTICE 'Insert link between acquisition framework and actor => ORGANISM' ;
         INSERT INTO gn_meta.cor_acquisition_framework_actor (
             id_acquisition_framework,
@@ -190,7 +199,7 @@ BEGIN
         RAISE NOTICE 'Inserted "actor => ORGANISM" link rows: %', affectedRows ;
 
 
-        RAISE NOTICE '-------------------------------------------------------------------------------' ;
+        RAISE NOTICE '-------------------------------------------------' ;
         RAISE NOTICE 'Insert link between acquisition framework and actor => USER' ;
         INSERT INTO gn_meta.cor_acquisition_framework_actor (
             id_acquisition_framework,
@@ -212,7 +221,7 @@ BEGIN
         RAISE NOTICE 'Inserted "actor => USER" link rows: %', affectedRows ;
 
 
-        RAISE NOTICE '-------------------------------------------------------------------------------' ;
+        RAISE NOTICE '-------------------------------------------------' ;
         RAISE NOTICE 'Insert publications' ;
         INSERT INTO gn_meta.sinp_datatype_publications (
             unique_publication_id,
@@ -233,14 +242,15 @@ BEGIN
                 )
                 AND afit.meta_last_action = 'I'
             ORDER BY afit.gid ASC
+            -- With NOT EXISTS don't use OFFSET because it's eliminate previously inserted rows.
+            -- OFFSET offsetCnt
             LIMIT step
-            OFFSET offsetCnt
         ON CONFLICT DO NOTHING ;
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Inserted "publications" rows: %', affectedRows ;
 
 
-        RAISE NOTICE '-------------------------------------------------------------------------------' ;
+        RAISE NOTICE '-------------------------------------------------' ;
         RAISE NOTICE 'Insert link between acquisition framework and publications' ;
         INSERT INTO gn_meta.cor_acquisition_framework_publication (
             id_acquisition_framework,
@@ -261,8 +271,6 @@ BEGIN
 
 
         offsetCnt := offsetCnt + (step) ;
-        RAISE NOTICE 'offsetCnt: %', offsetCnt ;
-
     END LOOP ;
 END
 $$ ;
