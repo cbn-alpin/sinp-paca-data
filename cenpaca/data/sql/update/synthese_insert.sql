@@ -11,6 +11,16 @@ SET client_encoding = 'UTF8';
 
 
 \echo '-------------------------------------------------------------------------------'
+\echo 'Disable trigger "tri_meta_dates_change_synthese"'
+ALTER TABLE gn_synthese.synthese DISABLE TRIGGER tri_meta_dates_change_synthese ;
+
+
+\echo '-------------------------------------------------------------------------------'
+\echo 'Disable trigger "tri_insert_calculate_sensitivity"'
+ALTER TABLE gn_synthese.synthese DISABLE TRIGGER tri_insert_calculate_sensitivity ;
+
+
+\echo '-------------------------------------------------------------------------------'
 \echo 'Batch updating in "synthese" of the imported observations'
 -- TODO: check if we can use source_key and entity_source_pk_value to link observations in NOT EXISTS
 DO $$
@@ -74,6 +84,8 @@ BEGIN
             depth_min,
             depth_max,
             place_name,
+            the_geom_4326,
+            the_geom_point,
             the_geom_local,
             precision,
             date_min,
@@ -135,6 +147,8 @@ BEGIN
             depth_min,
             depth_max,
             place_name,
+            ST_Transform(geom, 4326),
+            ST_Transform(ST_Centroid(geom), 4326),
             geom,
             precision,
             date_min,
@@ -171,6 +185,16 @@ BEGIN
     END LOOP ;
 END
 $$ ;
+
+
+\echo '-------------------------------------------------------------------------------'
+\echo 'Enable trigger "tri_meta_dates_change_synthese"'
+ALTER TABLE gn_synthese.synthese ENABLE TRIGGER tri_meta_dates_change_synthese ;
+
+
+\echo '-------------------------------------------------------------------------------'
+\echo 'Enable trigger "tri_insert_calculate_sensitivity"'
+ALTER TABLE gn_synthese.synthese ENABLE TRIGGER tri_insert_calculate_sensitivity ;
 
 
 \echo '----------------------------------------------------------------------------'

@@ -9,6 +9,13 @@ BEGIN;
 
 SET client_encoding = 'UTF8';
 
+\echo '-------------------------------------------------------------------------------'
+\echo 'Disable trigger "tri_meta_dates_change_synthese"'
+ALTER TABLE gn_synthese.synthese DISABLE TRIGGER tri_meta_dates_change_synthese ;
+
+\echo '-------------------------------------------------------------------------------'
+\echo 'Disable trigger "tri_update_calculate_sensitivity"'
+ALTER TABLE gn_synthese.synthese DISABLE TRIGGER tri_update_calculate_sensitivity ;
 
 \echo '-------------------------------------------------------------------------------'
 \echo 'Batch updating in "synthese" of the imported observations'
@@ -75,6 +82,8 @@ BEGIN
             depth_min = sit.depth_min,
             depth_max = sit.depth_max,
             place_name = sit.place_name,
+            the_geom_4326 = ST_Transform(sit.geom, 4326),
+            the_geom_point = ST_Transform(ST_Centroid(sit.geom), 4326),
             the_geom_local = sit.geom,
             precision = sit.precision,
             date_min = sit.date_min,
@@ -159,8 +168,8 @@ BEGIN
             LIMIT step
             OFFSET offsetCnt
         ) AS sit
-        WHERE sit.unique_id_sinp = s.unique_id_sinp
-            AND sit.meta_update_date > s.meta_update_date ;
+        WHERE sit.unique_id_sinp = s.unique_id_sinp ;
+        --    AND sit.meta_update_date > s.meta_update_date ;
 
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Updated synthese rows: %', affectedRows ;
@@ -169,6 +178,16 @@ BEGIN
     END LOOP ;
 END
 $$ ;
+
+
+\echo '-------------------------------------------------------------------------------'
+\echo 'Enable trigger "tri_meta_dates_change_synthese"'
+ALTER TABLE gn_synthese.synthese ENABLE TRIGGER tri_meta_dates_change_synthese ;
+
+
+\echo '-------------------------------------------------------------------------------'
+\echo 'Enable trigger "tri_update_calculate_sensitivity"'
+ALTER TABLE gn_synthese.synthese ENABLE TRIGGER tri_update_calculate_sensitivity ;
 
 
 \echo '----------------------------------------------------------------------------'
