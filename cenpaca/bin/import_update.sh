@@ -117,6 +117,8 @@ function main() {
     executeUpgradeScript "organism" "delete"
     executeUpgradeScript "source" "delete"
 
+    reloadCorAreaSynthese
+
     printPretty "Are you sure to run maitain DB SQL script wich lock database (y/n). Default: n ?" ${Red}
     read -r -n 1 key
     echo # Move to a new line
@@ -292,6 +294,15 @@ function executeUpgradeScript() {
         psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
             -v "${psql_var}=${table}" \
             -f -
+}
+
+function reloadCorAreaSynthese() {
+    printMsg "Reload cor_area_synthese table..."
+
+    checkSuperuser
+    export PGPASSWORD="${db_pass}"; \
+        psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
+            -f "${sql_shared_dir}/reload_cor_area_synthese.sql"
 }
 
 function maintainDb() {
