@@ -15,5 +15,26 @@ UPDATE ref_geo.l_areas
         AND substring(area_code FROM 1 FOR 2) NOT IN ('84',' 83', '13', '06', '05', '04') ;
 
 \echo '----------------------------------------------------------------------------'
+\echo 'Enable all municipalities inside SINP PACA territory'
+UPDATE ref_geo.l_areas
+    SET "enable" = True
+    WHERE id_type = ref_geo.get_id_area_type('COM')
+        AND substring(area_code FROM 1 FOR 2) IN ('84',' 83', '13', '06', '05', '04') ;
+
+\echo '----------------------------------------------------------------------------'
+\echo 'Disable all departments outside SINP PACA territory'
+UPDATE ref_geo.l_areas
+    SET "enable" = False
+    WHERE id_type = ref_geo.get_id_area_type('DEP')
+        AND area_code NOT IN ('84',' 83', '13', '06', '05', '04') ;
+
+\echo '----------------------------------------------------------------------------'
+\echo 'Enable all departments inside SINP PACA territory'
+UPDATE ref_geo.l_areas
+    SET "enable" = True
+    WHERE id_type = ref_geo.get_id_area_type('DEP')
+        AND area_code IN ('84',' 83', '13', '06', '05', '04') ;
+
+\echo '----------------------------------------------------------------------------'
 \echo 'COMMIT if all is OK:'
 COMMIT;
