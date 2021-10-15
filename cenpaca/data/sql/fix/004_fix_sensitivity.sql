@@ -78,12 +78,11 @@ ALTER TABLE gn_synthese.synthese ENABLE TRIGGER tri_meta_dates_change_synthese ;
 ALTER TABLE gn_synthese.synthese ENABLE TRIGGER tri_update_calculate_sensitivity ;
 
 
-\echo '-------------------------------------------------------------------------------'
-\echo 'RUN this queries if necessary:'
-\echo 'VACUUM FULL VERBOSE gn_synthese.synthese ;'
-\echo 'ANALYSE VERBOSE gn_synthese.synthese ;'
-
-
 \echo '----------------------------------------------------------------------------'
 \echo 'COMMIT if all is ok:'
 COMMIT;
+
+
+\echo '-------------------------------------------------------------------------------'
+\echo 'Clean table gn_synthese.synthese '
+VACUUM VERBOSE ANALYSE gn_synthese.synthese ;

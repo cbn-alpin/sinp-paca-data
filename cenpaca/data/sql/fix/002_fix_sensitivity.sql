@@ -73,9 +73,11 @@ END
 $$ ;
 
 
-\echo '-------------------------------------------------------------------------------'
-\echo 'RUN this queries if necessary:'
-\echo 'VACUUM FULL VERBOSE gn_synthese.synthese ;'
-\echo 'ANALYSE VERBOSE gn_synthese.synthese ;'
-
+\echo '----------------------------------------------------------------------------'
+\echo 'COMMIT if all is ok:'
 COMMIT;
+
+
+\echo '-------------------------------------------------------------------------------'
+\echo 'Clean table gn_synthese.synthese '
+VACUUM VERBOSE ANALYSE gn_synthese.synthese ;
