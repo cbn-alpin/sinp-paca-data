@@ -1,5 +1,6 @@
 \echo 'Set precision fields in synthese table for fauna data where value is NULL.'
-\echo 'These observations are attached to the municipality, so we use the radius of the municipality s area to define the precision.'
+\echo 'These observations are attached to the municipality, so we use '
+\echo 'the average radius of the municipality s area to define the precision.'
 \echo 'Rights: db-owner'
 \echo 'GeoNature database compatibility : v2.6.2+'
 -- Usage: psql -h "localhost" -U "<db-owner-name>" -d "<db-name>" -f <path-to-this-sql-file>
@@ -33,10 +34,18 @@ BEGIN
             WITH municipalities AS (
                 SELECT
                     la.id_area,
-                    round(radius(ST_MinimumBoundingRadius(la.geom))) AS "precision"
+                    ROUND(AVG(st_distance(st_centroid(la.geom), com_points.geom))) AS "precision"
                 FROM ref_geo.l_areas AS la
+                    JOIN (
+                        SELECT id_area, (st_dumpPoints(geom)).*
+                        FROM ref_geo.l_areas
+                        WHERE id_type = ref_geo.get_id_area_type('COM')
+                            AND "enable" = TRUE
+                    ) AS com_points
+                        ON (la.id_area = com_points.id_area)
                 WHERE la.id_type = ref_geo.get_id_area_type_by_code('COM')
-                    AND la."enable" = true
+                    AND la."enable" = TRUE
+                GROUP BY la.id_area
             )
             SELECT
                 unique_id_sinp,
