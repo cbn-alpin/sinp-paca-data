@@ -1,0 +1,4 @@
+id_nom;cd_nom;cd_ref;nom_francais;comments;commentaire_disparition;cd_nom_remplacement;deleted;tmp_import
+6778;104306;104306;;;cd_nom de remplacement à utiliser. nouveau cd_nom :771713;771713;t;
+7843;116744;116744;;;cd_nom de remplacement à utiliser. nouveau cd_nom :521658;521658;t;
+19764;342470;342470;;;cd_nom non diffusé mais toujours existant : taxon diffusé à tort, non présent et jamais mentionné en France;;t;
