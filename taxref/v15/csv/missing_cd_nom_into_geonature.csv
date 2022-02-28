@@ -1,0 +1,10 @@
+table_name,cd_nom,nom_complet,nb_occurence,plus_recente_diffusion,cd_nom_remplacement,cd_raison_suppression
+gn_synthese.synthese,243151,"Staphylinus compressus Geoffroy, 1785",1,9.0,,2
+gn_synthese.synthese,610817,"Cerastium illyricum Ard., 1764",1,9.0,,2
+gn_synthese.synthese,717262,"Hieracium stauii Belli, 1904",1,9.0,,2
+gn_synthese.synthese,810958,"Hieracium pesianum Arv.-Touv. & Belli, 1913",1,9.0,,2
+taxonomie.bib_noms,102214,"Hieracium misaucinum Nägeli & Peter, 1886",1,9.0,,2
+taxonomie.bib_noms,243151,"Staphylinus compressus Geoffroy, 1785",1,9.0,,2
+taxonomie.bib_noms,610817,"Cerastium illyricum Ard., 1764",1,9.0,,2
+taxonomie.bib_noms,717262,"Hieracium stauii Belli, 1904",1,9.0,,2
+taxonomie.bib_noms,810958,"Hieracium pesianum Arv.-Touv. & Belli, 1913",1,9.0,,2
