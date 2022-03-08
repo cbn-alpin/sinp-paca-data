@@ -222,7 +222,7 @@ function executeCopy() {
     fi
 
     local table="${table_prefix}_${data_type}"
-    local sql_file="${sql_dir}/update/${data_type}_copy.sql"
+    local sql_file="${sql_shared_dir}/update/${data_type}/copy.sql"
     local psql_var="${data_type_abbr}ImportTable"
 
     printMsg "Copy ${type^^} in GeoNature database..."
@@ -260,7 +260,7 @@ function displayStats() {
     export PGPASSWORD="${db_pass}"; \
         psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
             -v importTable="${table}" \
-            -f "${sql_dir}/update/stats.sql"
+            -f "${sql_shared_dir}/update/stats.sql"
 
 }
 
@@ -285,7 +285,7 @@ function executeUpgradeScript() {
     fi
 
     local table="${table_prefix}_${data_type}"
-    local sql_file="${sql_dir}/update/${data_type}_${action}.sql"
+    local sql_file="${sql_shared_dir}/update/${data_type}/${action}.sql"
     local psql_var="${data_type_abbr}ImportTable"
 
     printMsg "${action^} ${type^^} in destination table..."
