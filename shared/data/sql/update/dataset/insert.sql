@@ -99,7 +99,7 @@ BEGIN
             territory_desc
         )
             SELECT
-                gn_meta.get_id_dataset_by_shortname(dit.shortname),
+                gn_meta.get_id_dataset_by_uuid(dit.unique_id),
                 ref_nomenclatures.get_id_nomenclature('TERRITOIRE', elems ->> 0),
                 elems ->> 1
             FROM gn_imports.${datasetImportTable} AS dit,
@@ -121,7 +121,7 @@ BEGIN
             id_nomenclature_actor_role
         )
             SELECT
-                gn_meta.get_id_dataset_by_shortname(dit.shortname),
+                gn_meta.get_id_dataset_by_uuid(dit.unique_id),
                 utilisateurs.get_id_organism_by_name(elems ->> 0),
                 ref_nomenclatures.get_id_nomenclature('ROLE_ACTEUR', elems ->> 1)
             FROM gn_imports.${datasetImportTable} AS dit,
@@ -143,7 +143,7 @@ BEGIN
             id_nomenclature_actor_role
         )
             SELECT
-                gn_meta.get_id_dataset_by_shortname(dit.shortname),
+                gn_meta.get_id_dataset_by_uuid(dit.unique_id),
                 utilisateurs.get_id_role_by_identifier(elems ->> 0),
                 ref_nomenclatures.get_id_nomenclature('ROLE_ACTEUR', elems ->> 1)
             FROM gn_imports.${datasetImportTable} AS dit,

@@ -59,10 +59,11 @@ BEGIN
             LIMIT step
             OFFSET offsetCnt
         ) AS oit
-        WHERE ( -- TODO: check if OR below is a good idea or not !
-                oit.name = bo.nom_organisme
-                OR
+        WHERE (
                 oit.unique_id = bo.uuid_organisme
+                -- La présence de doublon avec le même nom ne permet pas de metre à jour en se basant sur le nom.
+                -- La contrainte "bib_organismes_un" bloque la mise à jour...
+                --OR oit.name = bo.nom_organisme
             ) ;
 
         GET DIAGNOSTICS affectedRows = ROW_COUNT;

@@ -76,7 +76,9 @@ BEGIN
                 afit.name = taf.acquisition_framework_name
                 OR
                 afit.unique_id = taf.unique_acquisition_framework_id
-            ) AND afit.meta_update_date > taf.meta_update_date ;
+            ) ;
+            -- Avoid using meta_update_date because it's not always correct.
+            -- AND afit.meta_update_date > taf.meta_update_date ;
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Updated PARENT acquisition frameworks rows: %', affectedRows ;
 

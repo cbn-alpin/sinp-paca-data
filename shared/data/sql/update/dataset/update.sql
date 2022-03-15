@@ -83,7 +83,10 @@ BEGIN
                 dit.shortname = td.dataset_shortname
                 OR
                 dit.unique_id = td.unique_dataset_id
-            ) AND dit.meta_update_date > td.meta_update_date ;
+            ) ;
+            -- Avoid using meta_update_date because it's not always correct.
+            -- AND dit.meta_update_date > td.meta_update_date
+
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Updated datasets rows: %', affectedRows ;
 
