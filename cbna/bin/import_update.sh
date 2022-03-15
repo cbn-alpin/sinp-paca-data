@@ -107,6 +107,7 @@ function main() {
     parseCsv "synthese" "s"
     executeCopy "synthese"
     displayStats "synthese"
+
     executeUpgradeScript "synthese" "insert"
     executeUpgradeScript "synthese" "update"
     executeUpgradeScript "synthese" "delete"
