@@ -53,8 +53,9 @@ BEGIN
             LIMIT step
             OFFSET offsetCnt
         ) AS sit
-        WHERE sit.name_source = ts.name_source
-            AND sit.meta_update_date > ts.meta_update_date ;
+        WHERE sit.name_source = ts.name_source ;
+            -- Avoid using meta_update_date because it's not always correct.
+            -- AND sit.meta_update_date > ts.meta_update_date ;
 
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Update affected rows: %', affectedRows ;

@@ -61,7 +61,7 @@ BEGIN
         ) AS oit
         WHERE (
                 oit.unique_id = bo.uuid_organisme
-                -- La présence de doublon avec le même nom ne permet pas de metre à jour en se basant sur le nom.
+                -- La présence de doublon avec le même nom ne permet pas de mettre à jour en se basant sur le nom.
                 -- La contrainte "bib_organismes_un" bloque la mise à jour...
                 --OR oit.name = bo.nom_organisme
             ) ;

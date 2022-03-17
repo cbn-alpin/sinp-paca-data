@@ -66,8 +66,9 @@ BEGIN
                 uit.identifier = tr.identifiant
                 OR
                 uit.unique_id = tr.uuid_role
-            )
-            AND uit.meta_update_date > tr.date_update ;
+            ) ;
+            -- Avoid using meta_update_date because it's not always correct.
+            -- AND uit.meta_update_date > tr.date_update ;
 
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Update affected rows: %', affectedRows ;

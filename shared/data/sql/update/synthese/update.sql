@@ -169,7 +169,8 @@ BEGIN
             OFFSET offsetCnt
         ) AS sit
         WHERE sit.unique_id_sinp = s.unique_id_sinp ;
-        --    AND sit.meta_update_date > s.meta_update_date ;
+            -- Avoid using meta_update_date because it's not always correct.
+            -- AND sit.meta_update_date > s.meta_update_date ;
 
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Updated synthese rows: %', affectedRows ;
