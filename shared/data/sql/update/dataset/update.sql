@@ -119,7 +119,7 @@ BEGIN
             territory_desc
         )
             SELECT
-                gn_meta.get_id_dataset_by_shortname(dit.shortname),
+                COALESCE(gn_meta.get_id_dataset_by_shortname(dit.shortname), gn_meta.get_id_dataset_by_uuid(dit.unique_id)),
                 ref_nomenclatures.get_id_nomenclature('TERRITOIRE', elems ->> 0),
                 elems ->> 1
             FROM gn_imports.${datasetImportTable} AS dit,
@@ -161,8 +161,8 @@ BEGIN
             id_nomenclature_actor_role
         )
             SELECT
-                gn_meta.get_id_dataset_by_shortname(dit.shortname),
-                utilisateurs.get_id_organism_by_name(elems ->> 0),
+                COALESCE(gn_meta.get_id_dataset_by_shortname(dit.shortname), gn_meta.get_id_dataset_by_uuid(dit.unique_id)),
+                COALESCE(utilisateurs.get_id_organism_by_name(elems ->> 0), utilisateurs.get_id_organism_by_uuid((elems ->> 0)::uuid)),
                 ref_nomenclatures.get_id_nomenclature('ROLE_ACTEUR', elems ->> 1)
             FROM gn_imports.${datasetImportTable} AS dit,
                 json_array_elements(array_to_json(dit.cor_actors_organism)) elems
@@ -182,8 +182,8 @@ BEGIN
             id_nomenclature_actor_role
         )
             SELECT
-                gn_meta.get_id_dataset_by_shortname(dit.shortname),
-                utilisateurs.get_id_role_by_identifier(elems ->> 0),
+                COALESCE(gn_meta.get_id_dataset_by_shortname(dit.shortname), gn_meta.get_id_dataset_by_uuid(dit.unique_id)),
+                COALESCE(utilisateurs.get_id_role_by_identifier(elems ->> 0), utilisateurs.get_id_role_by_uuid((elems ->> 0)::uuid)),
                 ref_nomenclatures.get_id_nomenclature('ROLE_ACTEUR', elems ->> 1)
             FROM gn_imports.${datasetImportTable} AS dit,
                 json_array_elements(array_to_json(dit.cor_actors_user)) elems

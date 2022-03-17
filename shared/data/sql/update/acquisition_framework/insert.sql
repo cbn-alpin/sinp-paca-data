@@ -146,7 +146,7 @@ BEGIN
             id_nomenclature_voletsinp
         )
             SELECT
-                gn_meta.get_id_acquisition_framework_by_name(afit.name),
+                COALESCE(gn_meta.get_id_acquisition_framework_by_name(afit.name), gn_meta.get_id_acquisition_framework_by_uuid(afit.unique_id)),
                 ref_nomenclatures.get_id_nomenclature('VOLET_SINP', UNNEST(afit.cor_voletsinp))
             FROM gn_imports.${afImportTable} AS afit
             WHERE afit.meta_last_action = 'I'
@@ -165,7 +165,7 @@ BEGIN
             id_nomenclature_objectif
         )
             SELECT
-                gn_meta.get_id_acquisition_framework_by_name(afit.name),
+                COALESCE(gn_meta.get_id_acquisition_framework_by_name(afit.name), gn_meta.get_id_acquisition_framework_by_uuid(afit.unique_id)),
                 ref_nomenclatures.get_id_nomenclature('CA_OBJECTIFS', UNNEST(afit.cor_objectifs))
             FROM gn_imports.${afImportTable} AS afit
             WHERE afit.meta_last_action = 'I'
@@ -185,8 +185,8 @@ BEGIN
             id_nomenclature_actor_role
         )
             SELECT
-                gn_meta.get_id_acquisition_framework_by_name(afit.name),
-                utilisateurs.get_id_organism_by_name(elems ->> 0),
+                COALESCE(gn_meta.get_id_acquisition_framework_by_name(afit.name), gn_meta.get_id_acquisition_framework_by_uuid(afit.unique_id)),
+                COALESCE(utilisateurs.get_id_organism_by_name(elems ->> 0), utilisateurs.get_id_organism_by_uuid((elems ->> 0)::uuid)),
                 ref_nomenclatures.get_id_nomenclature('ROLE_ACTEUR', elems ->> 1)
             FROM gn_imports.${afImportTable} AS afit,
                 json_array_elements(array_to_json(afit.cor_actors_organism)) elems
@@ -207,8 +207,8 @@ BEGIN
             id_nomenclature_actor_role
         )
             SELECT
-                gn_meta.get_id_acquisition_framework_by_name(afit.name),
-                utilisateurs.get_id_role_by_identifier(elems ->> 0),
+                COALESCE(gn_meta.get_id_acquisition_framework_by_name(afit.name), gn_meta.get_id_acquisition_framework_by_uuid(afit.unique_id)),
+                COALESCE(utilisateurs.get_id_role_by_identifier(elems ->> 0), utilisateurs.get_id_role_by_uuid((elems ->> 0)::uuid)),
                 ref_nomenclatures.get_id_nomenclature('ROLE_ACTEUR', elems ->> 1)
             FROM gn_imports.${afImportTable} AS afit,
                 json_array_elements(array_to_json(afit.cor_actors_user)) elems
@@ -257,7 +257,7 @@ BEGIN
             id_publication
         )
             SELECT
-                gn_meta.get_id_acquisition_framework_by_name(afit.name),
+                COALESCE(gn_meta.get_id_acquisition_framework_by_name(afit.name), gn_meta.get_id_acquisition_framework_by_uuid(afit.unique_id)),
                 gn_meta.get_id_publication_by_reference(elems ->> 'reference')
             FROM gn_imports.${afImportTable} AS afit,
                 jsonb_array_elements(afit.cor_publications) elems
