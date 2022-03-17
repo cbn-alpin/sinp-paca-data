@@ -22,7 +22,7 @@ L'archive au format d'échange doit être stocké sur Dropbox au niveau du dossi
 Elle doit être compressé au format `.tar.bz2` pour cela se placer dans le
 dossier contenant les fichiers `.csv` du format d'échange et lancer la commande :
 ```
-tar jcvf ../2022-03-15_sinp_paca_cbnmed.tar.bz2 .
+tar jcvf ../2022-03-11_sinp_paca_cbnmed.tar.bz2 .
 ```
 
 ## Import des données
