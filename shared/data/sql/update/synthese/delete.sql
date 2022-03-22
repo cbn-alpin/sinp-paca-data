@@ -40,8 +40,8 @@ BEGIN
             OFFSET offsetCnt
         )
         DELETE FROM ONLY gn_synthese.synthese
-        WHERE unique_id_sinp IN (SELECT unique_id FROM obs_to_delete)
-            OR entity_source_pk_value IN (SELECT source_key FROM obs_to_delete) ;
+        WHERE unique_id_sinp IN (SELECT DISTINCT unique_id FROM obs_to_delete)
+            OR entity_source_pk_value IN (SELECT DISTINCT source_key FROM obs_to_delete) ;
 
         GET DIAGNOSTICS affectedRows = ROW_COUNT;
         RAISE NOTICE 'Removed synthese rows: %', affectedRows ;
