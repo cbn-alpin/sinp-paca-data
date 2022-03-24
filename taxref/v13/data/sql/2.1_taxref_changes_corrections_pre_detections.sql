@@ -7,8 +7,9 @@ ALTER TABLE gn_synthese.synthese DROP CONSTRAINT IF EXISTS fk_synthese_cd_nom;
 
 
 -- Deleting row with "cd_nom" with NO replacement "cd_nom" in "gn_synthese.synthese"
-DELETE FROM gn_synthese.synthese
-WHERE cd_nom IN (342470) ;
+UPDATE gn_synthese.synthese
+SET cd_nom = NULL
+WHERE cd_nom IN (342470, 194230, 211008) ;
 
 
 -- Deleting row from "cor_nom_liste"
