@@ -6,8 +6,10 @@ BEGIN;
 ALTER TABLE gn_synthese.synthese DROP CONSTRAINT IF EXISTS fk_synthese_cd_nom;
 
 
--- Deleting row with "cd_nom" with NO replacement "cd_nom" in "gn_synthese.synthese"
-DELETE FROM gn_synthese.synthese
+-- Set cd_nom to NULL for "cd_nom" with NO replacement "cd_nom" in "gn_synthese.synthese"
+-- Data provider may wish to update these records.
+UPDATE gn_synthese.synthese
+SET cd_nom = NULL
 WHERE cd_nom IN (101747) ;
 
 -- Set cd_nom to NULL for removing TaxRef cd_nom
