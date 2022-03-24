@@ -15,9 +15,18 @@ WHERE cd_nom IN (101747) ;
 -- Set cd_nom to NULL for removing TaxRef cd_nom
 UPDATE gn_synthese.synthese
 SET cd_nom = NULL
-WHERE cd_nom IN (116744, 104306, 211008, 194230, 192435, 199189, 195284);
---Number of row updated by cd_nom : 332, 24, 2, 3, 29, 14, 5,
+WHERE cd_nom IN (211008, 194230, 192435, 199189, 195284);
+--Number of row updated by cd_nom : 2, 3, 29, 14, 5,
 
+UPDATE gn_synthese.synthese
+SET cd_nom = 771713
+WHERE cd_nom = 104306 ;
+--Number of row updated by cd_nom : 24
+
+UPDATE gn_synthese.synthese
+SET cd_nom = 521658
+WHERE cd_nom = 116744 ;
+--Number of row updated by cd_nom : 332
 
 -- Deleting row from "cor_nom_liste"
 DELETE FROM taxonomie.cor_nom_liste AS l
