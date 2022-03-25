@@ -7,8 +7,8 @@ ALTER TABLE gn_synthese.synthese DROP CONSTRAINT IF EXISTS fk_synthese_cd_nom;
 -- Set cd_nom to NULL for removing TaxRef cd_nom
 UPDATE gn_synthese.synthese
 SET cd_nom = NULL
-WHERE cd_nom IN (717262, 716681, 810958, 243151, 610817);
---Number of row updated by cd_nom : 1, 3, 6, 2, 1
+WHERE cd_nom IN (717262, 810958, 243151, 610817);
+--Number of row updated by cd_nom : 1, 6, 2, 1
 
 -- Deleting row from "cor_nom_liste"
 DELETE FROM taxonomie.cor_nom_liste AS l
