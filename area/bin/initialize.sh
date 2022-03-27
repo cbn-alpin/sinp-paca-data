@@ -84,8 +84,7 @@ function main() {
     # Start script
     printInfo "French administrative areas import script started at: ${fmt_time_start}"
 
-    downloadFrenchAdminAreas
-    createFrenchAdminRegionAreasSqlFile
+    createSubdividedTerritoryFromRefGeo
     loadSinpArea
     removeAreasOutsideSinpArea
 
@@ -94,11 +93,61 @@ function main() {
     displayTimeElapsed
 }
 
-function download() {
-	local readonly url=$1
-	local readonly file=$2
-	wget --no-check-certificate --progress=dot $url -O $file 2>&1 | grep --line-buffered -E -o "100%|[1-9]0%|^[^%]+$" | uniq
-	printVerbose "Download $2 : ${Gre}DONE${RCol}"
+function createSubdividedTerritoryFromRefGeo() {
+    printMsg "Creating SINP subdivided territory from ref_geo..."
+
+    if [[ "${area_load_sinp_area_from_ref_geo}" = true ]]; then
+        sudo -n -u "${pg_admin_name}" -s \
+        psql -d "${db_name}" \
+            -v areasTmpTable="${area_table_name}" \
+            -v areaSubdividedTableName="${area_subdivided_table_name}" \
+            -f "${sql_dir}/001_initialize.sql"
+
+        export PGPASSWORD="$db_pass"; \
+            psql -h $db_host -U $db_user -d $db_name \
+                -v areaSubdividedTableName="${area_subdivided_table_name}" \
+                -v areasTmpTable="${area_table_name}" \
+                -v sinpRegId="${area_sinp_region_id}" \
+                -f "${sql_dir}/002_subdivide_sinp_area_from_ref_geo.sql"
+    fi
+}
+
+function loadSinpArea() {
+    printMsg "Loading SINP area in database '${area_table_name}'..."
+
+    if [[ "${area_load_sinp_area}" = true ]]; then
+        downloadFrenchAdminAreas
+        createFrenchAdminRegionAreasSqlFile
+
+        sudo -n -u "${pg_admin_name}" -s \
+            psql -d "${db_name}" \
+                -v areasTmpTable="${area_table_name}" \
+                -v areaSubdividedTableName="${area_subdivided_table_name}" \
+                -f "${sql_dir}/001_initialize.sql"
+
+        export PGPASSWORD="$db_pass"; \
+            psql -h $db_host -U $db_user -d $db_name \
+                -f "${area_sql_file_path}"
+
+
+        export PGPASSWORD="$db_pass"; \
+            psql -h $db_host -U $db_user -d $db_name \
+                -v areaSubdividedTableName="${area_subdivided_table_name}" \
+                -v areasTmpTable="${area_table_name}" \
+                -v sinpRegId="${area_sinp_region_id}" \
+                -f "${sql_dir}/002_subdivide_sinp_area_with_l_areas.sql"
+
+        removePreviousSinpArea
+
+        export PGPASSWORD="$db_pass"; \
+            psql -h $db_host -U $db_user -d $db_name \
+                -v areasTmpTable="${area_table_name}" \
+                -v sinpRegId="${area_sinp_region_id}" \
+                -f "${sql_dir}/004_add_sinp_area.sql"
+    else
+        local msg="SQL file of french administrative areas was NOT loaded in database"
+        printVerbose "${Blink}${Mag}INFO: ${RCol}${Gra}${msg}"
+    fi
 }
 
 function downloadFrenchAdminAreas() {
@@ -116,6 +165,13 @@ function downloadFrenchAdminAreas() {
     fi
 }
 
+function download() {
+	local readonly url=$1
+	local readonly file=$2
+	wget --no-check-certificate --progress=dot $url -O $file 2>&1 | grep --line-buffered -E -o "100%|[1-9]0%|^[^%]+$" | uniq
+	printVerbose "Download $2 : ${Gre}DONE${RCol}"
+}
+
 function createFrenchAdminRegionAreasSqlFile() {
     printMsg "Create SQL file of french administrative areas..."
     if ! [[ -f "${area_sql_file_path}" ]]; then
@@ -125,40 +181,6 @@ function createFrenchAdminRegionAreasSqlFile() {
         shp2pgsql -c -D -s 2154 -I "${area_shape_name}" "${area_table_name}" >> "${area_sql_file_path}";
     else
         printVerbose "SQL file of french administrative areas already exists: ${Gre}${area_sql_file_path}"
-    fi
-}
-
-function loadSinpArea() {
-    printMsg "Loading SINP area in database '${area_table_name}'..."
-
-    if [[ "${area_load_sinp_area}" = true ]]; then
-        sudo -n -u "${pg_admin_name}" -s \
-            psql -d "${db_name}" \
-                -v areasTmpTable="${area_table_name}" \
-                -v areaSubdividedTableName="${area_subdivided_table_name}" \
-                -f "${sql_dir}/001_initialize.sql"
-
-        export PGPASSWORD="$db_pass"; \
-            psql -h $db_host -U $db_user -d $db_name \
-                -f "${area_sql_file_path}"
-
-        export PGPASSWORD="$db_pass"; \
-            psql -h $db_host -U $db_user -d $db_name \
-                -v areaSubdividedTableName="${area_subdivided_table_name}" \
-                -v areasTmpTable="${area_table_name}" \
-                -v sinpRegId="${area_sinp_region_id}" \
-                -f "${sql_dir}/002_subdivide_sinp_area.sql"
-
-        removePreviousSinpArea
-
-        export PGPASSWORD="$db_pass"; \
-            psql -h $db_host -U $db_user -d $db_name \
-                -v areasTmpTable="${area_table_name}" \
-                -v sinpRegId="${area_sinp_region_id}" \
-                -f "${sql_dir}/004_add_sinp_area.sql"
-    else
-        local msg="SQL file of french administrative areas was NOT loaded in database"
-        printVerbose "${Blink}${Mag}INFO: ${RCol}${Gra}${msg}"
     fi
 }
 
