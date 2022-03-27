@@ -8,7 +8,7 @@
 -- rsync -av ./06_* geonat@db-paca-sinp:~/data/outside/data/sql/update/ --dry-run
 --
 -- Use this script this way:
--- psql -h localhost -U geonatadmin -d gn2_dev_sinp -f ~/data/outside/data/sql/update/06_*
+-- psql -h localhost -U geonatadmin -d geonature2db -f ~/data/outside/data/sql/update/06_*
 
 
 BEGIN ;
