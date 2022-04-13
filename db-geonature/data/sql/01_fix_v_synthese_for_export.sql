@@ -12,7 +12,7 @@ BEGIN;
 \echo 'Recreate VIEW gn_synthese.v_synthese_for_export with new fields see ticket #70'
 -- Ajout des colonnes id_nomenclature_sensitivity et id_nomenclature_diffusion_level (obligatoires)
 -- Suppression de toutes les colonnes inutiles
-DROP VIEW gn_synthese.v_synthese_for_export ;
+DROP VIEW IF EXISTS gn_synthese.v_synthese_for_export ;
 
 CREATE OR REPLACE VIEW gn_synthese.v_synthese_for_export AS
 	SELECT s.id_synthese,

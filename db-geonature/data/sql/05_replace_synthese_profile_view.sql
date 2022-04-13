@@ -1,5 +1,8 @@
--- Droits d'éxecution nécessaire : DB OWNER
+-- Required rights: DB OWNER
 -- Replace synthese profile view to avoid sensitive and private observations
+-- Transfert this script on server this way:
+-- rsync -av ./05_* geonat@db-paca-sinp:~/data/db-geonature/data/sql/ --dry-run
+-- Use this script this way: psql -h localhost -U geonatadmin -d geonature2db -f ~/data/db-geonature/data/sql/05_*
 BEGIN;
 
 \echo '----------------------------------------------------------------------------'
@@ -39,13 +42,13 @@ CREATE OR REPLACE VIEW gn_profiles.v_synthese_for_profiles AS
     FROM gn_synthese.synthese s
         LEFT JOIN taxonomie.taxref t
             ON s.cd_nom = t.cd_nom
-        LEFT JOIN synthese.t_nomenclatures AS sens
+        LEFT JOIN ref_nomenclatures.t_nomenclatures AS sens
 		    ON (s.id_nomenclature_sensitivity = sens.id_nomenclature)
-	    LEFT JOIN synthese.t_nomenclatures AS dl
+	    LEFT JOIN ref_nomenclatures.t_nomenclatures AS dl
 		    ON (s.id_nomenclature_diffusion_level = dl.id_nomenclature)
         CROSS JOIN LATERAL gn_profiles.get_parameters(s.cd_nom) AS p
             (cd_ref, spatial_precision, temporal_precision_days, active_life_stage, distance)
-    WHERE ( dl.cd_nomenclature = '0' OR dl.cd_nomenclature = '5' OR s.id_nomenclature_diffusion_level IS NULL )
+    WHERE ( dl.cd_nomenclature = '5' OR s.id_nomenclature_diffusion_level IS NULL )
 	    AND ( sens.cd_nomenclature = '0' OR s.id_nomenclature_sensitivity IS NULL )
         AND p.spatial_precision IS NOT NULL
         AND st_maxdistance(st_centroid(s.the_geom_local), s.the_geom_local) < p.spatial_precision::double precision
