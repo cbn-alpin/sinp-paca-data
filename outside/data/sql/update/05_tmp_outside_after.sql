@@ -34,7 +34,14 @@ WITH DATA;
 CREATE INDEX tmp_outside_after_all_id_synthese_idx ON gn_synthese.tmp_outside_after_all (id_synthese);
 CREATE INDEX tmp_outside_after_all_unique_id_sinp_idx ON gn_synthese.tmp_outside_after_all (unique_id_sinp);
 CREATE INDEX tmp_outside_after_all_the_geom_local_idx ON gn_synthese.tmp_outside_after_all USING gist (the_geom_local);
-GRANT SELECT ON TABLE gn_synthese.tmp_outside_after_all TO gnreader;
+DO
+$do$
+    BEGIN
+        IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'gnreader') THEN
+            GRANT SELECT ON TABLE gn_synthese.tmp_outside_after_all TO gnreader;
+        END IF;
+    END;
+$do$ ;
 COMMIT;
 
 
@@ -70,7 +77,14 @@ WITH DATA;
 CREATE INDEX tmp_outside_after_m10_id_synthese_idx ON gn_synthese.tmp_outside_after_m10 (id_synthese);
 CREATE INDEX tmp_outside_after_m10_unique_id_sinp_idx ON gn_synthese.tmp_outside_after_m10 (unique_id_sinp);
 CREATE INDEX tmp_outside_after_m10_the_geom_local_idx ON gn_synthese.tmp_outside_after_m10 USING gist (the_geom_local);
-GRANT SELECT ON TABLE gn_synthese.tmp_outside_after_m10 TO gnreader;
+DO
+$do$
+    BEGIN
+        IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'gnreader') THEN
+            GRANT SELECT ON TABLE gn_synthese.tmp_outside_after_m10 TO gnreader;
+        END IF;
+    END;
+$do$ ;
 COMMIT;
 
 
@@ -106,7 +120,14 @@ WITH DATA;
 CREATE INDEX tmp_outside_after_m5_id_synthese_idx ON gn_synthese.tmp_outside_after_m5 (id_synthese);
 CREATE INDEX tmp_outside_after_m5_unique_id_sinp_idx ON gn_synthese.tmp_outside_after_m5 (unique_id_sinp);
 CREATE INDEX tmp_outside_after_m5_the_geom_local_idx ON gn_synthese.tmp_outside_after_m5 USING gist (the_geom_local);
-GRANT SELECT ON TABLE gn_synthese.tmp_outside_after_m5 TO gnreader;
+DO
+$do$
+    BEGIN
+        IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'gnreader') THEN
+            GRANT SELECT ON TABLE gn_synthese.tmp_outside_after_m5 TO gnreader;
+        END IF;
+    END;
+$do$ ;
 COMMIT;
 
 
@@ -142,7 +163,14 @@ WITH DATA;
 CREATE INDEX tmp_outside_after_m1_id_synthese_idx ON gn_synthese.tmp_outside_after_m1 (id_synthese);
 CREATE INDEX tmp_outside_after_m1_unique_id_sinp_idx ON gn_synthese.tmp_outside_after_m1 (unique_id_sinp);
 CREATE INDEX tmp_outside_after_m1_the_geom_local_idx ON gn_synthese.tmp_outside_after_m1 USING gist (the_geom_local);
-GRANT SELECT ON TABLE gn_synthese.tmp_outside_after_m1 TO gnreader;
+DO
+$do$
+    BEGIN
+        IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'gnreader') THEN
+            GRANT SELECT ON TABLE gn_synthese.tmp_outside_after_m1 TO gnreader;
+        END IF;
+    END;
+$do$ ;
 COMMIT;
 
 
@@ -178,7 +206,14 @@ WITH DATA;
 CREATE INDEX tmp_outside_after_com_id_synthese_idx ON gn_synthese.tmp_outside_after_com (id_synthese);
 CREATE INDEX tmp_outside_after_com_unique_id_sinp_idx ON gn_synthese.tmp_outside_after_com (unique_id_sinp);
 CREATE INDEX tmp_outside_after_com_the_geom_local_idx ON gn_synthese.tmp_outside_after_com USING gist (the_geom_local);
-GRANT SELECT ON TABLE gn_synthese.tmp_outside_after_com TO gnreader;
+DO
+$do$
+    BEGIN
+        IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'gnreader') THEN
+            GRANT SELECT ON TABLE gn_synthese.tmp_outside_after_com TO gnreader;
+        END IF;
+    END;
+$do$ ;
 COMMIT;
 
 
@@ -214,5 +249,12 @@ WITH DATA;
 CREATE INDEX tmp_outside_after_dep_id_synthese_idx ON gn_synthese.tmp_outside_after_dep (id_synthese);
 CREATE INDEX tmp_outside_after_dep_unique_id_sinp_idx ON gn_synthese.tmp_outside_after_dep (unique_id_sinp);
 CREATE INDEX tmp_outside_after_dep_the_geom_local_idx ON gn_synthese.tmp_outside_after_dep USING gist (the_geom_local);
-GRANT SELECT ON TABLE gn_synthese.tmp_outside_after_dep TO gnreader;
+DO
+$do$
+    BEGIN
+        IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'gnreader') THEN
+            GRANT SELECT ON TABLE gn_synthese.tmp_outside_after_dep TO gnreader;
+        END IF;
+    END;
+$do$ ;
 COMMIT;
