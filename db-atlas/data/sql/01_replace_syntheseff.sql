@@ -40,7 +40,7 @@ AS $function$
 		SELECT INTO centroid csa.centroid_4326
 		FROM synthese.vm_cor_synthese_area AS csa
 		WHERE csa.id_synthese = idSynthese
-			AND csa.type_code = (CASE WHEN code = '1' THEN 'M5' WHEN code = '2' THEN 'M5' WHEN code = '3' THEN 'M5' END)
+			AND csa.type_code = (CASE WHEN code = '0' THEN 'M5' WHEN code = '1' THEN 'M5' WHEN code = '2' THEN 'M5' WHEN code = '3' THEN 'M5' END)
 		LIMIT 1 ;
 
 		RETURN centroid ;
@@ -77,7 +77,7 @@ SELECT
 	s.observers AS observateurs,
 	(s.altitude_min + s.altitude_max) / 2 AS altitude_retenue,
 	CASE
-		WHEN (sens.cd_nomenclature::INT >= 1 AND sens.cd_nomenclature::INT <= 3 AND dl.cd_nomenclature::INT >= 1 AND dl.cd_nomenclature::INT <= 3) THEN
+		WHEN (sens.cd_nomenclature::INT >= 1 AND sens.cd_nomenclature::INT <= 3 AND dl.cd_nomenclature::INT >= 0 AND dl.cd_nomenclature::INT <= 3) THEN
 			CASE
 				WHEN (sens.cd_nomenclature::INT >= dl.cd_nomenclature::INT) THEN (
 					atlas.get_blurring_centroid_geom_by_sensitivity(sens.cd_nomenclature, s.id_synthese)
@@ -86,10 +86,10 @@ SELECT
 					atlas.get_blurring_centroid_geom_by_diffusion_level(dl.cd_nomenclature, s.id_synthese)
 				)
 			END
-		WHEN (sens.cd_nomenclature::INT >= 1 AND sens.cd_nomenclature::INT <= 3) AND (dl.cd_nomenclature::INT < 1 OR dl.cd_nomenclature::INT > 3) THEN (
+		WHEN (sens.cd_nomenclature::INT >= 1 AND sens.cd_nomenclature::INT <= 3) AND (dl.cd_nomenclature::INT > 4) THEN (
 			atlas.get_blurring_centroid_geom_by_sensitivity(sens.cd_nomenclature, s.id_synthese)
 		)
-		WHEN (dl.cd_nomenclature::INT >= 1 AND dl.cd_nomenclature::INT <= 3) AND (sens.cd_nomenclature::INT < 1 OR sens.cd_nomenclature::INT > 3) THEN (
+		WHEN (dl.cd_nomenclature::INT >= 0 AND dl.cd_nomenclature::INT <= 3) AND (sens.cd_nomenclature::INT < 1) THEN (
 			atlas.get_blurring_centroid_geom_by_diffusion_level(dl.cd_nomenclature, s.id_synthese)
 		)
 		ELSE st_transform(s.the_geom_point, 4326)
