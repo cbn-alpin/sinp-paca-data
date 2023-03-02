@@ -1,13 +1,13 @@
 -- SQL queries to check where organizations not linked to the INPN are used
 
--- NOT FIND in SINP migration file => 90
+-- NOT FIND in SINP migration file => 63
 SELECT DISTINCT bo.id_organisme, bo.uuid_organisme, bo.nom_organisme
 FROM utilisateurs.bib_organismes AS bo
 WHERE id_organisme > 1
 	AND (bo.additional_data ->> 'isInpnUuid') IS NULL
 ;
 
--- IN meta with actors => 28
+-- IN meta with actors => 1
 SELECT DISTINCT bo.id_organisme, bo.uuid_organisme, bo.nom_organisme, string_agg(actors.actor, ', ') AS actors
 FROM utilisateurs.bib_organismes AS bo
 	JOIN LATERAL (
@@ -79,6 +79,7 @@ WHERE id_organisme > 1
 ;
 
 -- NOT IN meta but IN t_roles => 52
+-- WARNING : find the INPN UUIDs and replace them!
 SELECT DISTINCT bo.id_organisme, bo.uuid_organisme, bo.nom_organisme
 FROM utilisateurs.bib_organismes AS bo
 WHERE id_organisme > 1
@@ -93,6 +94,7 @@ WHERE id_organisme > 1
 	)
 ;
 -- NOT IN meta and NOT Linked ! => 10
+-- WARNING : delete this entries!
 SELECT DISTINCT bo.id_organisme, bo.uuid_organisme, bo.nom_organisme
 FROM utilisateurs.bib_organismes AS bo
 WHERE id_organisme > 1
