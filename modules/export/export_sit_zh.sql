@@ -6,6 +6,8 @@
 --      via cette plateforme que via Silene)
 --•	les données sensibles doivent être exclues de cet export
 
+DROP MATERIALIZED VIEW IF EXISTS gn_exports.sit_zh_taxon;
+
 CREATE MATERIALIZED VIEW
     gn_exports.sit_zh_taxon AS
 WITH
@@ -77,31 +79,9 @@ WITH
             )
             JOIN taxonomie.taxref AS t ON t.cd_nom = s.cd_nom
             JOIN nationally_protected_taxa AS npt ON npt.cd_ref = t.cd_ref
-        WHERE
-            z.surface_km2 >= 25
-            AND s.additional_data @> '{"precisionLabel": "précis"}'::jsonb
+        WHERE s.additional_data @> '{"precisionLabel": "précis"}'::jsonb
             AND DATE_PART('year', s.date_max) >= DATE_PART('year', NOW()) - 20
             AND s.id_nomenclature_sensitivity = ref_nomenclatures.get_id_nomenclature ('SENSIBILITE', '0') -- sauf données sensibles
-        UNION
-        SELECT DISTINCT
-            t.cd_ref,
-            t.nom_valide,
-            z.code,
-            z.main_name
-        FROM
-            ref_geo.sit_zones_humides AS z
-            JOIN gn_synthese.synthese AS s ON (
-                s.the_geom_local && z.geom
-                AND st_within (s.the_geom_local, z.geom)
-            )
-            JOIN taxonomie.taxref AS t ON t.cd_nom = s.cd_nom
-            JOIN nationally_protected_taxa AS npt ON npt.cd_ref = t.cd_ref
-        WHERE
-            z.surface_km2 < 25
-            AND s.additional_data @> '{"precisionLabel": "précis"}'::jsonb
-            AND DATE_PART('year', s.date_max) >= DATE_PART('year', NOW()) - 20
-            AND s.id_nomenclature_sensitivity = ref_nomenclatures.get_id_nomenclature ('SENSIBILITE', '0') -- sauf données sensibles
-            AND s.id_nomenclature_diffusion_level = ref_nomenclatures.get_id_nomenclature ('NIV_PRECIS', '5') -- sauf données privées et floutées
     ),
     departmentally_protected_observations_in_wetlands AS (
         SELECT DISTINCT
@@ -121,35 +101,9 @@ WITH
                 dpt.cd_ref = t.cd_ref
                 AND dpt.id_area = csa.id_area
             )
-        WHERE
-            z.surface_km2 >= 25
-            AND s.additional_data @> '{"precisionLabel": "précis"}'
+        WHERE s.additional_data @> '{"precisionLabel": "précis"}'
             AND DATE_PART('year', s.date_max) >= DATE_PART('year', NOW()) - 20
             AND s.id_nomenclature_sensitivity = ref_nomenclatures.get_id_nomenclature ('SENSIBILITE', '0') -- sauf données sensibles
-        UNION
-        SELECT DISTINCT
-            t.cd_ref,
-            t.nom_valide,
-            z.code,
-            z.main_name
-        FROM
-            ref_geo.sit_zones_humides AS z
-            JOIN gn_synthese.synthese s ON (
-                s.the_geom_local && z.geom
-                AND st_within (s.the_geom_local, z.geom)
-            )
-            JOIN taxonomie.taxref AS t ON t.cd_nom = s.cd_nom
-            JOIN gn_synthese.cor_area_synthese AS csa ON csa.id_synthese = s.id_synthese
-            JOIN departmentally_protected_taxa AS dpt ON (
-                dpt.cd_ref = t.cd_ref
-                AND dpt.id_area = csa.id_area
-            )
-        WHERE
-            z.surface_km2 < 25
-            AND s.additional_data @> '{"precisionLabel": "précis"}'
-            AND DATE_PART('year', s.date_max) >= DATE_PART('year', NOW()) - 20
-            AND s.id_nomenclature_sensitivity = ref_nomenclatures.get_id_nomenclature ('SENSIBILITE', '0') -- sauf données sensibles
-            AND s.id_nomenclature_diffusion_level = ref_nomenclatures.get_id_nomenclature ('NIV_PRECIS', '5') -- sauf données privées et floutées
     )
 SELECT DISTINCT
     code AS code_zh,
