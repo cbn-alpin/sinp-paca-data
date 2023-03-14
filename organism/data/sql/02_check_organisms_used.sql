@@ -7,7 +7,7 @@ WHERE id_organisme > 1
 	AND (bo.additional_data ->> 'isInpnUuid') IS NULL
 ;
 
--- IN meta with actors => 1
+-- IN meta with actors => 0
 SELECT DISTINCT bo.id_organisme, bo.uuid_organisme, bo.nom_organisme, string_agg(actors.actor, ', ') AS actors
 FROM utilisateurs.bib_organismes AS bo
 	JOIN LATERAL (
@@ -66,7 +66,7 @@ WHERE id_organisme > 1
 GROUP BY bo.id_organisme, bo.uuid_organisme, bo.nom_organisme
 ;
 
--- NOT IN meta => 62
+-- NOT IN meta => 63
 SELECT DISTINCT bo.id_organisme, bo.uuid_organisme, bo.nom_organisme
 FROM utilisateurs.bib_organismes AS bo
 WHERE id_organisme > 1
@@ -78,7 +78,7 @@ WHERE id_organisme > 1
 	)
 ;
 
--- NOT IN meta but IN t_roles => 52
+-- NOT IN meta but IN t_roles => 53
 -- WARNING : find the INPN UUIDs and replace them!
 SELECT DISTINCT bo.id_organisme, bo.uuid_organisme, bo.nom_organisme
 FROM utilisateurs.bib_organismes AS bo
