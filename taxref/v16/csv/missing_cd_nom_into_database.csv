@@ -1,0 +1,5 @@
+table_name,cd_nom,nom_complet,nb_occurence,plus_recente_diffusion,cd_nom_remplacement,cd_raison_suppression
+gn_synthese.synthese,307482,"Ecdyonurus alpinus Hefti, Tomka & Zurwerra, 1987",1,9.0,,2
+gn_synthese.synthese,787051,"Brachythecium tauriscorum Molendo, 1866",1,9.0,,2
+taxonomie.bib_noms,307482,"Ecdyonurus alpinus Hefti, Tomka & Zurwerra, 1987",1,9.0,,2
+taxonomie.bib_noms,787051,"Brachythecium tauriscorum Molendo, 1866",1,9.0,,2
