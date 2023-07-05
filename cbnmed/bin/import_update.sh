@@ -68,7 +68,7 @@ function main() {
     # Start script
     printInfo "${app_name} script started at: ${fmt_time_start}"
 
-    downloadCenpacaDataArchive
+    downloadDataArchive
     extractArchive
     prepareDb
 
@@ -131,14 +131,13 @@ function main() {
     displayTimeElapsed
 }
 
-function downloadCenpacaDataArchive() {
-    printMsg "Download CBNA data archive..."
+function downloadDataArchive() {
+    printMsg "Downloading ${app_code^^} data archive..."
 
     if [[ ! -f "${raw_dir}/${cbnmed_filename_archive}" ]]; then
-        curl -X POST https://content.dropboxapi.com/2/files/download \
-            --header "Authorization: Bearer ${cbnmed_dropbox_token}" \
-            --header "Dropbox-API-Arg: {\"path\": \"${cbnmed_dropbox_dir}/${cbnmed_filename_archive}\"}" \
-            > "${raw_dir}/${cbnmed_filename_archive}"
+        downloadSftp "${sftp_user}" "${sftp_pwd}" \
+            "${sftp_host}" "${sftp_port}" \
+            "/${app_code}/${cbnmed_filename_archive}" "${raw_dir}/${cbnmed_filename_archive}"
      else
         printVerbose "Archive file \"${cbnmed_filename_archive}\" already downloaded." ${Gra}
     fi
