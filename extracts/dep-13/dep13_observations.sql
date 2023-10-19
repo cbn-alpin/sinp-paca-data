@@ -1,5 +1,5 @@
--- Query to extracts data for Bouches-du-Rhône (13) with sensitive data !
--- Usage (from local computer): cat ./dep13_all.sql | ssh <user>@<ip-server> 'export PGPASSWORD="<db-user-password>" ; psql -h localhost -p <db-port> -U <db-user> -d <db-name>' > ./$(date +'%F')_extracts.csv
+-- Query to extracts observations for Bouches-du-Rhône (13) with sensitive data !
+-- Usage (from local computer): cat ./dep13_observations.sql | ssh <user>@<ip-server> 'export PGPASSWORD="<db-user-password>" ; psql -h localhost -p <db-port> -U <db-user> -d <db-name>' > ./$(date +'%F')_observations_dep13.csv
 -- The CSV file should contain:  lines.
 COPY (
     WITH cda AS (
