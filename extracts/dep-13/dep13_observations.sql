@@ -1,6 +1,7 @@
 -- Query to extracts observations for Bouches-du-Rhône (13) with sensitive data !
 -- Usage (from local computer): cat ./dep13_observations.sql | ssh <user>@<ip-server> 'export PGPASSWORD="<db-user-password>" ; psql -h localhost -p <db-port> -U <db-user> -d <db-name>' > ./$(date +'%F')_observations_dep13.csv
 -- The CSV file should contain:  lines.
+\timing off
 COPY (
     WITH cda AS (
         -- ATTENTION : pas de récupération de l'organisme d'un utilisateur lié.
@@ -19,6 +20,9 @@ COPY (
         -- Sujet observation
         s.unique_id_sinp AS "idSINPOccTax",
         n15.label_default AS "statutObservation",
+        t.classe,
+        t.ordre,
+        t.famille,
         s.nom_cite AS "nomCite",
         s.the_geom_local AS "geometrie",
         n1.label_default AS "natureObjetGeo",

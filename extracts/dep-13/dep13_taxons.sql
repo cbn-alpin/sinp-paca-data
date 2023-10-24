@@ -1,6 +1,7 @@
 -- Query to extracts taxons for Bouches-du-Rhône (13) with sensitive data !
 -- Usage (from local computer): cat ./dep13_taxons.sql | ssh <user>@<ip-server> 'export PGPASSWORD="<db-user-password>" ; psql -h localhost -p <db-port> -U <db-user> -d <db-name>' > ./$(date +'%F')_taxons_dep13.csv
 -- The CSV file should contain:  lines.
+\timing off
 COPY (
     WITH areas AS (
         SELECT id_area
