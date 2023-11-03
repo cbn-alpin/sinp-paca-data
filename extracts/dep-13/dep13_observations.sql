@@ -24,7 +24,7 @@ COPY (
         t.ordre,
         t.famille,
         s.nom_cite AS "nomCite",
-        s.the_geom_local AS "geometrie",
+        st_asewkt(s.the_geom_local) AS "geometrie",
         n1.label_default AS "natureObjetGeo",
         s.precision AS "precisionGeometrie",
         s.place_name AS "nomLieu",
