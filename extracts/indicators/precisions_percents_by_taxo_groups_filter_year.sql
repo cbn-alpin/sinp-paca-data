@@ -11,40 +11,72 @@ COPY (
         SELECT group_name, cd_refs
         FROM (
             VALUES
-                ('Vertébrés', ARRAY(
+                ('Animalia - Vertébrés', ARRAY(
                     SELECT DISTINCT cd_ref
                     FROM taxonomie.taxref
                     WHERE regne = 'Animalia'
                         AND phylum = 'Chordata')
                 ),
-                ('Invertébrés', ARRAY(
+                ('Animalia - Invertébrés', ARRAY(
                     SELECT DISTINCT cd_ref
                     FROM taxonomie.taxref
                     WHERE regne = 'Animalia'
                         AND phylum IN ('Arthropoda', 'Annelida', 'Cnidaria', 'Mollusca', 'Platyhelminthes'))
                 ),
-                ('Champignons', ARRAY(
+                ('Animalia - Autres', ARRAY(
+                    SELECT DISTINCT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Animalia'
+                        AND phylum NOT IN ('Arthropoda', 'Annelida', 'Cnidaria', 'Mollusca', 'Platyhelminthes', 'Chordata'))
+                ),
+                ('Fungi', ARRAY(
                     SELECT DISTINCT cd_ref
                     FROM taxonomie.taxref
                     WHERE regne = 'Fungi')
                 ),
-                ('Trachéophytes', ARRAY(
+                ('Plantae - Trachéophytes', ARRAY(
                     SELECT DISTINCT cd_ref
                     FROM taxonomie.taxref
                     WHERE regne = 'Plantae'
                         AND group1_inpn = 'Trachéophytes')
                 ),
-                ('Bryophytes', ARRAY(
+                ('Plantae - Bryophytes', ARRAY(
                     SELECT DISTINCT cd_ref
                     FROM taxonomie.taxref
                     WHERE regne = 'Plantae'
                         AND group1_inpn = 'Bryophytes')
                 ),
-                ('Algues', ARRAY(
+                ('Plantae - Algues', ARRAY(
                     SELECT cd_ref
                     FROM taxonomie.taxref
                     WHERE regne = 'Plantae'
                         AND group1_inpn = 'Algues')
+                ),
+                ('Plantae - Autres', ARRAY(
+                    SELECT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Plantae'
+                        AND group1_inpn = 'Autres')
+                ),
+                ('Archaea', ARRAY(
+                    SELECT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Archaea')
+                ),
+                ('Bacteria', ARRAY(
+                    SELECT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Bacteria')
+                ),
+                ('Chromista', ARRAY(
+                    SELECT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Chromista')
+                ),
+                ('Protozoa', ARRAY(
+                    SELECT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Protozoa')
                 )
         ) AS tg (group_name, cd_refs)
     )

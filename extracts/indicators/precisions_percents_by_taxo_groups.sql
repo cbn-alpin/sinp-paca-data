@@ -3,67 +3,79 @@
 -- - <db-user-pwd> : replace with the database user password.
 \timing off
 
--- CREATE OR REPLACE FUNCTION gn_synthese.get_precision_label(precision_value integer)
---  RETURNS varchar
---  LANGUAGE plpgsql
---  IMMUTABLE
--- AS $function$
---     -- Function which return the precision label from a precision value in meter
---     DECLARE precisionLabel varchar;
-
---     BEGIN
---         SELECT INTO precisionLabel
---             CASE
---                 WHEN precision_value <= 25 THEN 'précis'
---                 WHEN precision_value > 25 AND precision_value <= 250  THEN 'lieu-dit'
---                 WHEN precision_value > 250 THEN 'commune'
---                 ELSE 'indéterminé'
---             END ;
-
---         RETURN precisionLabel ;
---     END;
--- $function$ ;
-
+-- See function gn_synthese.get_precision_label() in utils_function.sql.
 
 COPY (
     WITH taxo_groups AS (
         SELECT group_name, cd_refs
         FROM (
             VALUES
-                ('Vertébrés', ARRAY(
+                ('Animalia - Vertébrés', ARRAY(
                     SELECT DISTINCT cd_ref
                     FROM taxonomie.taxref
                     WHERE regne = 'Animalia'
                         AND phylum = 'Chordata')
                 ),
-                ('Invertébrés', ARRAY(
+                ('Animalia - Invertébrés', ARRAY(
                     SELECT DISTINCT cd_ref
                     FROM taxonomie.taxref
                     WHERE regne = 'Animalia'
                         AND phylum IN ('Arthropoda', 'Annelida', 'Cnidaria', 'Mollusca', 'Platyhelminthes'))
                 ),
-                ('Champignons', ARRAY(
+                ('Animalia - Autres', ARRAY(
+                    SELECT DISTINCT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Animalia'
+                        AND phylum NOT IN ('Arthropoda', 'Annelida', 'Cnidaria', 'Mollusca', 'Platyhelminthes', 'Chordata'))
+                ),
+                ('Fungi', ARRAY(
                     SELECT DISTINCT cd_ref
                     FROM taxonomie.taxref
                     WHERE regne = 'Fungi')
                 ),
-                ('Trachéophytes', ARRAY(
+                ('Plantae - Trachéophytes', ARRAY(
                     SELECT DISTINCT cd_ref
                     FROM taxonomie.taxref
                     WHERE regne = 'Plantae'
                         AND group1_inpn = 'Trachéophytes')
                 ),
-                ('Bryophytes', ARRAY(
+                ('Plantae - Bryophytes', ARRAY(
                     SELECT DISTINCT cd_ref
                     FROM taxonomie.taxref
                     WHERE regne = 'Plantae'
                         AND group1_inpn = 'Bryophytes')
                 ),
-                ('Algues', ARRAY(
+                ('Plantae - Algues', ARRAY(
                     SELECT cd_ref
                     FROM taxonomie.taxref
                     WHERE regne = 'Plantae'
                         AND group1_inpn = 'Algues')
+                ),
+                ('Plantae - Autres', ARRAY(
+                    SELECT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Plantae'
+                        AND group1_inpn = 'Autres')
+                ),
+                ('Archaea', ARRAY(
+                    SELECT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Archaea')
+                ),
+                ('Bacteria', ARRAY(
+                    SELECT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Bacteria')
+                ),
+                ('Chromista', ARRAY(
+                    SELECT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Chromista')
+                ),
+                ('Protozoa', ARRAY(
+                    SELECT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Protozoa')
                 )
         ) AS tg (group_name, cd_refs)
     )

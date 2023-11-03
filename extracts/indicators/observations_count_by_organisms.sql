@@ -5,29 +5,37 @@
 
 COPY (
     WITH datasets_by_organism AS (
-        SELECT organism_name, organism_uuid, datasets_ids
+        SELECT DISTINCT
+            COALESCE(o.nom_organisme, '-- Non renseigné --') AS organism_name,
+            organisms[1] AS organism_uuid,
+            array_agg(id_dataset ORDER BY id_dataset ASC) AS datasets_ids
         FROM (
-            SELECT o.nom_organisme, o.uuid_organisme, ARRAY_AGG(d.id_dataset ORDER BY d.id_dataset ASC)
-            FROM utilisateurs.bib_organismes AS o
-                JOIN gn_meta.cor_dataset_actor AS a
+            SELECT DISTINCT d.id_dataset, d.dataset_shortname, array_agg(o.uuid_organisme) AS organisms
+            FROM gn_meta.t_datasets AS d
+                LEFT JOIN gn_meta.cor_dataset_actor AS a
+                    ON (d.id_dataset = a.id_dataset AND a.id_nomenclature_actor_role IN (
+                        ref_nomenclatures.get_id_nomenclature('ROLE_ACTEUR', '2'), -- Financeur
+                        ref_nomenclatures.get_id_nomenclature('ROLE_ACTEUR', '5'), -- Fournisseur
+                        ref_nomenclatures.get_id_nomenclature('ROLE_ACTEUR', '6') -- Producteur
+                    ))
+                LEFT JOIN utilisateurs.bib_organismes AS o
                     ON o.id_organisme = a.id_organism
-                JOIN  gn_meta.t_datasets AS d
-                    ON d.id_dataset = a.id_dataset
-            WHERE a.id_nomenclature_actor_role IN (
-                    ref_nomenclatures.get_id_nomenclature('ROLE_ACTEUR', '5'),
-                    ref_nomenclatures.get_id_nomenclature('ROLE_ACTEUR', '6')
-                )
-            GROUP BY o.nom_organisme, o.uuid_organisme
-            ORDER BY o.nom_organisme
-        ) AS p (organism_name, organism_uuid, datasets_ids)
+            GROUP BY d.id_dataset, d.dataset_shortname
+            ORDER BY d.id_dataset
+        ) AS organisms_by_dataset
+            LEFT JOIN utilisateurs.bib_organismes AS o
+                ON o.uuid_organisme = organisms[1]
+        GROUP BY o.nom_organisme, organisms[1]
+        ORDER BY organism_name
     )
     SELECT
         dbo.organism_name,
+        dbo.organism_uuid,
         COUNT(s.id_synthese) AS obs_nbr
     FROM gn_synthese.synthese AS s
         JOIN datasets_by_organism AS dbo
             ON s.id_dataset = ANY(dbo.datasets_ids)
-    GROUP BY dbo.organism_name
+    GROUP BY dbo.organism_name, dbo.organism_uuid
     ORDER BY dbo.organism_name
 ) TO stdout
 WITH (format csv, header, delimiter E'\t') ;

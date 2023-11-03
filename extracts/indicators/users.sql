@@ -8,7 +8,20 @@ COPY (
         r.prenom_role AS prenom,
         r.nom_role AS nom,
         r.email AS email,
+        CASE
+            WHEN r.champs_addi ->> 'validate_charte' = '["true"]' THEN 'OUI'
+            ELSE 'NON'
+        END AS charte_valide,
+        CASE
+            WHEN r.active = TRUE THEN 'OUI'
+            ELSE 'NON'
+        END AS compte_actif,
+        CASE
+            WHEN r.pass_plus IS NOT NULL OR r.pass_plus != '' THEN 'OUI'
+            ELSE 'NON'
+        END AS avec_mot_de_passe,
         r.remarques AS remarques,
+        r.champs_addi AS donnees_additionnelles,
         r.date_insert AS date_inscription,
         r.date_update AS date_mise_a_jour,
         o.nom_organisme AS organisme_nom,
