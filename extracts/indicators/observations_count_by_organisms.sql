@@ -6,15 +6,18 @@
 COPY (
     WITH datasets_by_organism AS (
         SELECT DISTINCT
-            COALESCE(o.nom_organisme, '-- Non renseigné --') AS organism_name,
-            organisms[1] AS organism_uuid,
-            array_agg(id_dataset ORDER BY id_dataset ASC) AS datasets_ids
+            COALESCE(organisms_label, '-- Non renseigné --') AS organism_name,
+            organisms_uuid AS organism_uuid,
+            ARRAY_AGG(id_dataset ORDER BY id_dataset ASC) AS datasets_ids
         FROM (
-            SELECT DISTINCT d.id_dataset, d.dataset_shortname, array_agg(o.uuid_organisme) AS organisms
+            SELECT DISTINCT
+                d.id_dataset,
+                d.dataset_shortname,
+                STRING_AGG(o.nom_organisme, ' | ') AS organisms_label,
+                STRING_AGG(o.uuid_organisme::varchar, ', ') AS organisms_uuid
             FROM gn_meta.t_datasets AS d
                 LEFT JOIN gn_meta.cor_dataset_actor AS a
                     ON (d.id_dataset = a.id_dataset AND a.id_nomenclature_actor_role IN (
-                        ref_nomenclatures.get_id_nomenclature('ROLE_ACTEUR', '2'), -- Financeur
                         ref_nomenclatures.get_id_nomenclature('ROLE_ACTEUR', '5'), -- Fournisseur
                         ref_nomenclatures.get_id_nomenclature('ROLE_ACTEUR', '6') -- Producteur
                     ))
@@ -23,9 +26,7 @@ COPY (
             GROUP BY d.id_dataset, d.dataset_shortname
             ORDER BY d.id_dataset
         ) AS organisms_by_dataset
-            LEFT JOIN utilisateurs.bib_organismes AS o
-                ON o.uuid_organisme = organisms[1]
-        GROUP BY o.nom_organisme, organisms[1]
+        GROUP BY organisms_label, organisms_uuid
         ORDER BY organism_name
     )
     SELECT
