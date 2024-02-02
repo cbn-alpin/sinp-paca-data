@@ -1,5 +1,5 @@
 -- Script to export inserted, updated, deleted observations count by SINP imports
--- Usage (from local computer): cat ./observatins_count_by_imports.sql | ssh geonat@db-paca-sinp 'export PGPASSWORD="<db-user-pwd>" ; psql -q -h localhost -p 5432 -U gnreader -d geonature2db' > ./$(date +'%F')_obs_by_imports.csv
+-- Usage (from local computer): cat ./observations_count_by_imports.sql | ssh geonat@db-paca-sinp 'export PGPASSWORD="<db-user-pwd>" ; psql -q -h localhost -p 5432 -U gnreader -d geonature2db' > ./$(date +'%F')_obs_by_imports.csv
 -- - <db-user-pwd> : replace with the database user password.
 \timing off
 
