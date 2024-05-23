@@ -32,11 +32,12 @@ COPY (
     SELECT
         dbo.organism_name,
         dbo.organism_uuid,
+        ARRAY_LENGTH(dbo.datasets_ids, 1) AS dataset_nbr,
         COUNT(s.id_synthese) AS obs_nbr
     FROM gn_synthese.synthese AS s
         JOIN datasets_by_organism AS dbo
             ON s.id_dataset = ANY(dbo.datasets_ids)
-    GROUP BY dbo.organism_name, dbo.organism_uuid
+    GROUP BY dbo.organism_name, dbo.organism_uuid, dataset_nbr
     ORDER BY dbo.organism_name
 ) TO stdout
 WITH (format csv, header, delimiter E'\t') ;
