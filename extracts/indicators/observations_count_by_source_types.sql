@@ -1,5 +1,5 @@
--- Script to export observation percents by source types (Collection/Litterature//Fields/Unknown)
--- Usage (from local computer): cat ./observations_percent_by_source_types.sql | ssh geonat@db-paca-sinp 'export PGPASSWORD="<db-user-pwd>" ; psql -q -h localhost -p 5432 -U gnreader -d geonature2db' > ./$(date +'%F')_source_types_percents.csv
+-- Script to export observations counts by source types (Collection/Litterature//Fields/Unknown)
+-- Usage (from local computer): cat ./observations_count_by_source_types.sql | ssh geonat@db-paca-sinp 'export PGPASSWORD="<db-user-pwd>" ; psql -q -h localhost -p 5432 -U gnreader -d geonature2db' > ./$(date +'%F')_source_types_counts.csv
 -- - <db-user-pwd> : replace with the database user password.
 \timing off
 
@@ -77,20 +77,15 @@ COPY (
                 )
         ) AS tg (group_name, cd_refs)
     )
-    SELECT
-        r.group_name AS groupe_taxo,
-        ROUND((r.nbr_collection/nullif(r.total, 1)::float) * 100) AS pourcentage_collection,
-        ROUND((r.nbr_litterature/nullif(r.total, 1)::float) * 100) AS pourcentage_litterature,
-        ROUND((r.nbr_inconnu/nullif(r.total, 1)::float) * 100) AS pourcentage_inconnu,
-        ROUND((r.nbr_terrain/nullif(r.total, 1)::float) * 100) AS pourcentage_terrain
+    SELECT r.*
     FROM (
         SELECT
-            tg.group_name,
-            COUNT(s.id_synthese) AS total,
+            tg.group_name AS groupe_taxo,
             SUM(CASE WHEN ref_nomenclatures.get_cd_nomenclature(s.id_nomenclature_source_status) = 'Co' THEN 1 ELSE 0 END) AS nbr_collection,
             SUM(CASE WHEN ref_nomenclatures.get_cd_nomenclature(s.id_nomenclature_source_status) = 'Li' THEN 1 ELSE 0 END) AS nbr_litterature,
             SUM(CASE WHEN ref_nomenclatures.get_cd_nomenclature(s.id_nomenclature_source_status) = 'NSP' THEN 1 ELSE 0 END) AS nbr_inconnu,
-            SUM(CASE WHEN ref_nomenclatures.get_cd_nomenclature(s.id_nomenclature_source_status) = 'Te' THEN 1 ELSE 0 END) AS nbr_terrain
+            SUM(CASE WHEN ref_nomenclatures.get_cd_nomenclature(s.id_nomenclature_source_status) = 'Te' THEN 1 ELSE 0 END) AS nbr_terrain,
+            COUNT(s.id_synthese) AS total
         FROM gn_synthese.synthese AS s
             JOIN taxonomie.taxref AS t
                 ON s.cd_nom = t.cd_nom
@@ -100,23 +95,17 @@ COPY (
         ORDER BY tg.group_name
     ) AS r
 
-
     UNION ALL
 
-    SELECT
-        r.group_name AS groupe_taxo,
-        ROUND(((r.nbr_collection/nullif(r.total, 1)::float) * 100)::numeric, 1) AS pourcentage_collection,
-        ROUND(((r.nbr_litterature/nullif(r.total, 1)::float) * 100)::numeric, 1) AS pourcentage_litterature,
-        ROUND(((r.nbr_inconnu/nullif(r.total, 1)::float) * 100)::numeric, 1) AS pourcentage_inconnu,
-        ROUND(((r.nbr_terrain/nullif(r.total, 1)::float) * 100)::numeric, 1) AS pourcentage_terrain
+    SELECT r.*
     FROM (
         SELECT
-            'Global' AS group_name,
-            COUNT(s.id_synthese) AS total,
+            'Global' AS groupe_taxo,
             SUM(CASE WHEN ref_nomenclatures.get_cd_nomenclature(s.id_nomenclature_source_status) = 'Co' THEN 1 ELSE 0 END) AS nbr_collection,
             SUM(CASE WHEN ref_nomenclatures.get_cd_nomenclature(s.id_nomenclature_source_status) = 'Li' THEN 1 ELSE 0 END) AS nbr_litterature,
             SUM(CASE WHEN ref_nomenclatures.get_cd_nomenclature(s.id_nomenclature_source_status) = 'NSP' THEN 1 ELSE 0 END) AS nbr_inconnu,
-            SUM(CASE WHEN ref_nomenclatures.get_cd_nomenclature(s.id_nomenclature_source_status) = 'Te' THEN 1 ELSE 0 END) AS nbr_terrain
+            SUM(CASE WHEN ref_nomenclatures.get_cd_nomenclature(s.id_nomenclature_source_status) = 'Te' THEN 1 ELSE 0 END) AS nbr_terrain,
+            COUNT(s.id_synthese) AS total
         FROM gn_synthese.synthese AS s
     ) AS r
 ) TO stdout
