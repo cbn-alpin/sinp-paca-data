@@ -1,0 +1,6 @@
+table_name,cd_nom,nom_complet,nb_occurence,plus_recente_diffusion,cd_nom_remplacement,cd_raison_suppression
+gn_synthese.synthese,116017,"Prunella x dissecta Wender., 1831",1,9.0,,3
+gn_synthese.synthese,240582,"Ochthebius subpictus Wollaston, 1857",1,9.0,,2
+taxonomie.bib_noms,116017,"Prunella x dissecta Wender., 1831",1,9.0,,3
+taxonomie.bib_noms,161493,"Euphrasia christii Favrat, 1887",1,9.0,,2
+taxonomie.bib_noms,240582,"Ochthebius subpictus Wollaston, 1857",1,9.0,,2
