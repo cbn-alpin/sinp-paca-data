@@ -1,5 +1,5 @@
 -- Query to extracts datasets for SINP
--- Usage (from local computer): cat ./inpn_export_datasets.sql | ssh <user>@<ip-server> 'export PGPASSWORD="<db-user-password>" ; psql --no-psqlrc -h localhost -p <db-port> -U <db-user> -d <db-name>' > ./$(date +'%F')_inpn_dataset_extracts.csv
+-- Usage (from local computer): cat ./inpn_export_datasets.sql | ssh <user>@<ip-server> 'export PGPASSWORD="<db-user-password>" ; psql -h localhost -p <db-port> -U <db-user> -d <db-name>' > ./$(date +'%F')_inpn_dataset_extracts.csv
 
 COPY (
     WITH jdd_utilises AS (
@@ -9,6 +9,7 @@ COPY (
         FROM
             gn_synthese.synthese AS s
             JOIN gn_meta.t_datasets AS d ON s.id_dataset = d.id_dataset
+        WHERE d.dataset_name not ilike '%mnhn%'
     ),
     objet_loc AS (
         SELECT
@@ -170,4 +171,4 @@ COPY (
             FROM
                 jdd_utilises
         )
-) TO stdout WITH (format csv, header, delimiter E'\t');
+) TO stdout WITH (format csv, header, delimiter E'\t', null '\N');
