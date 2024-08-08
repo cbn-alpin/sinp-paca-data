@@ -1,10 +1,5 @@
 -- Query to extracts datasets for SINP
--- Usage (from local computer): `
---    cat ./inpn_export_acquisition_frameworks.sql | /
---    ssh <user>@<ip-server> 'export PGPASSWORD="<db-user-password>" ; /
---    psql --no-psqlrc -h localhost -p <db-port> -U <db-user> -d <db-name>' /
---    > ./$(date +'%F')_inpn_af_extracts.csv
-
+-- Usage (from local computer): cat ./inpn_export_acquisition_frameworks.sql | ssh <user>@<ip-server> 'export PGPASSWORD="<db-user-password>" ; psql -h localhost -p <db-port> -U <db-user> -d <db-name>' > ./$(date +'%F')_inpn_af_extracts.csv
 COPY (
     WITH ca_utilises AS (
         SELECT
@@ -17,6 +12,7 @@ COPY (
                     gn_synthese.synthese
             ) AS t
             JOIN gn_meta.t_datasets AS jd ON t.id_dataset = jd.id_dataset
+        WHERE jd.dataset_name not ilike '%mnhn%'
     ),
     acteur_principal AS (
         SELECT
@@ -146,4 +142,4 @@ COPY (
             FROM
                 ca_utilises
         )
-) TO stdout WITH (format csv, header, delimiter E'\t');
+) TO stdout WITH (format csv, header, delimiter E'\t', null '\N');
