@@ -9,17 +9,23 @@
 BEGIN;
 
 \echo '----------------------------------------------------------------------------'
-\echo 'Disable all status text not used for SINP PACA territory'
+\echo 'Disable all status text'
 UPDATE taxonomie.bdc_statut_text
-SET enable = false
-WHERE cd_doc NOT IN (
-    366749, 901, 738, 758, 763, 625, 633, 3561, 643, 713, 716, 730, 731,
-    703, 694, 694, 732, 733, 174768, 174769, 174770, 195368, 268129,
-    268409, 146732, 145082, 196448, 158248, 755, 756, 358269, 358270,
-    160321, 275396, 31345, 138062, 31343, 300831, 138065, 87486, 165208,
-    87625, 31341, 87619, 138063, 144173, 220350, 321049, 208629, 87484,
-    146311, 88261, 300212, 146310, 31346, 249369, 138064
-) ;
+SET "enable" = false ;
+
+\echo '----------------------------------------------------------------------------'
+\echo 'Enable all status text used for SINP PACA territory'
+UPDATE taxonomie.bdc_statut_text AS s
+SET "enable" = true
+FROM taxonomie.bdc_statut_cor_text_area AS ct
+    JOIN ref_geo.l_areas AS la
+        ON ct.id_area = la.id_area
+WHERE s.id_text = ct.id_text
+    AND la.id_type = ref_geo.get_id_area_type('DEP')
+    AND la.area_code IN ('04', '05', '06', '13', '83', '84')
+    AND cd_type_statut IN (
+        'LRM', 'LRE', 'LRN', 'LRR', 'ZDET', 'DO', 'DH', 'REGL', 'REGLLUTTE', 'PN', 'PR', 'PD'
+    ) ;
 
 \echo '----------------------------------------------------------------------------'
 \echo 'COMMIT if all is OK:'
