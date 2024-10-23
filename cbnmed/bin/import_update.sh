@@ -109,22 +109,15 @@ function main() {
     displayStats "synthese"
     executeUpgradeScript "synthese" "insert"
     executeUpgradeScript "synthese" "update"
-    executeUpgradeScript "synthese" "delete"
 
+    reloadCorAreaSynthese
+
+    executeUpgradeScript "synthese" "delete"
     executeUpgradeScript "dataset" "delete"
     executeUpgradeScript "acquisition framework" "delete"
     executeUpgradeScript "user" "delete"
     executeUpgradeScript "organism" "delete"
     executeUpgradeScript "source" "delete"
-
-    reloadCorAreaSynthese
-
-    printPretty "Are you sure to run maintain DB SQL script wich lock database (y/n). Default: n ?" ${Red}
-    read -r -n 1 key
-    echo # Move to a new line
-    if [[ "${key}" =~ ^[Yy]$ ]]; then
-        maintainDb
-    fi
 
     #+----------------------------------------------------------------------------------------------------------+
     # Display script execution infos
@@ -296,19 +289,14 @@ function executeUpgradeScript() {
 
 function reloadCorAreaSynthese() {
     printMsg "Reload cor_area_synthese table..."
+    local table="${table_prefix}_synthese"
+    local sql_file="${sql_shared_dir}/update/synthese/reload.sql"
 
     checkSuperuser
     export PGPASSWORD="${db_pass}"; \
+        sed "s/\${syntheseImportTable}/${table}/g" "${sql_file}" | \
         psql -h "${db_host}" -U "${db_user}" -d "${db_name}" \
-            -f "${sql_shared_dir}/reload_cor_area_synthese.sql"
-}
-
-function maintainDb() {
-    printMsg "Executing database maintenance on updated tables..."
-
-    export PGPASSWORD="${db_super_pass}"; \
-        psql -h "${db_host}" -U "${db_super_user}" -d "${db_name}" \
-            -f "${sql_shared_dir}/synthese_maintenance.sql"
+            -f -
 }
 
 main "${@}"
