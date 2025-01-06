@@ -1,7 +1,14 @@
    WITH taxo_groups AS (
         SELECT group_name, cd_refs
         FROM (
-            VALUES
+            values
+                 ('Animalia - Vertébrés', ARRAY(
+                    SELECT DISTINCT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Animalia'
+                        AND phylum = 'Chordata' )
+                ),           
+            
                 ('Animalia - Vertébrés - Mammifères', ARRAY(
                     SELECT DISTINCT cd_ref
                     FROM taxonomie.taxref
@@ -103,7 +110,35 @@
                     FROM taxonomie.taxref
                     WHERE regne = 'Animalia'
                         AND phylum = 'Arthropoda' and ordre = 'Hymenoptera' )     
-                ),                 
+                ),  
+                 ('Animalia - Invertébrés - Insectes aquatiques', ARRAY(
+                    SELECT DISTINCT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Animalia'
+                        AND phylum = 'Arthropoda' and ordre in ('Ephemeroptera', 'Trichoptera', 'Plecoptera') )     
+                ),  
+                
+                  ('Animalia - Invertébrés - Papillons de jour et zygènes', ARRAY(
+                    SELECT DISTINCT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Animalia'
+                        AND phylum = 'Arthropoda' and ordre = 'Lepidoptera' and famille in ('Papilionidae', 'Pieridae', 'Nymphalidae', 'Danaidae', 'Hesperiidae', 'Lycaenidae', 'Riodinidae', 'Zygaenidae') )     
+                ),         
+                
+                  ('Animalia - Invertébrés - Hétérocères', ARRAY(
+                    SELECT DISTINCT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Animalia'
+                        AND phylum = 'Arthropoda' and ordre = 'Lepidoptera' and famille in ('Acanthopteroctetidae', 'Adelidae', 'Agathiphagidae', 'Alucitidae', 'Argyresthiidae', 'Attevidae', 'Autostichidae', 
+                        'Batrachedridae', 'Bedelliidae', 'Blastobasidae', 'Brachodidae', 'Brahmaeidae', 'Bucculatrigidae', 'Carposinidae', 'Castniidae', 'Choreutidae', 'Cimeliidae', 'Coleophoridae', 
+                        'Copromorphidae', 'Cosmopterigidae', 'Cossidae', 'Crambidae', 'Depressariidae', 'Douglasiidae', 'Drepanidae', 'Dryadaulidae', 'Elachistidae', 'Endromidae', 'Epermeniidae', 'Erebidae', 
+                        'Eriocottidae', 'Eriocraniidae', 'Euteliidae', 'Galacticidae', 'Gelechiidae', 'Geometridae', 'Glyphipterigidae', 'Gracillariidae', 'Hedylidae', 'Heliodinidae', 'Heliozelidae', 'Hepialidae', 
+                        'Heterogynidae', 'Hyblaeidae', 'Immidae', 'Incurvariidae', 'Lasiocampidae', 'Lecithoceridae', 'Limacodidae', 'Lyonetiidae', 'Lypusidae', 'Micropterigidae', 'Millieriidae', 'Momphidae', 
+                        'Nepticulidae', 'Noctuidae', 'Nolidae', 'Notodontidae', 'Oecophoridae', 'Opostegidae', 'Plutellidae', 'Praydidae', 'Prodoxidae', 'Psychidae', 'Pterolonchidae', 'Pterophoridae', 'Pyralidae',
+                        'Roeslerstammiidae', 'Saturniidae', 'Schreckensteiniidae', 'Scythrididae', 'Scythropiidae', 'Sesiidae',  'Sphingidae', 'Stathmopodidae', 'Thyrididae', 'Tineidae', 'Tischeriidae', 'Tortricidae', 
+                        'Uraniidae', 'Urodidae', 'Xylorictidae', 'Yponomeutidae', 'Ypsolophidae') )     
+                ),                   
+                
                 ('Animalia - Invertébrés', ARRAY(
                     SELECT DISTINCT cd_ref
                     FROM taxonomie.taxref
@@ -193,15 +228,15 @@
             taxon_nbr,
             obs_nbr,
             0 AS sort_order
-        FROM groups_counts
+        FROM groups_counts)AS counts_and_total
 
-        UNION
+ --       UNION
 
-        SELECT
-            'Total' AS group_name,
-            SUM(taxon_nbr) AS taxon_nbr,
-            SUM(obs_nbr) AS obs_nbr,
-            1 AS sort_order
-        FROM groups_counts
-    ) AS counts_and_total
-    ORDER BY sort_order, group_name
+ --       SELECT
+ --           'Total' AS group_name,
+ --           SUM(taxon_nbr) AS taxon_nbr,
+ --           SUM(obs_nbr) AS obs_nbr,
+ --           1 AS sort_order
+ --       FROM groups_counts
+ --   ) AS counts_and_total
+   ORDER BY sort_order, group_name
