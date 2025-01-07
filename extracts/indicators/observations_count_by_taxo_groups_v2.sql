@@ -2,13 +2,7 @@ WITH taxo_groups AS (
     SELECT group_name, cd_refs
     FROM (
         VALUES
-            ('Animalia - Vertébrés', ARRAY(
-                    SELECT DISTINCT cd_ref
-                    FROM taxonomie.taxref
-                    WHERE regne = 'Animalia'
-                        AND phylum = 'Chordata'
-                )
-            ),
+
             ('Animalia - Vertébrés - Mammifères', ARRAY(
                     SELECT DISTINCT cd_ref
                     FROM taxonomie.taxref
@@ -71,7 +65,7 @@ WITH taxo_groups AS (
                     SELECT DISTINCT cd_ref
                     FROM taxonomie.taxref
                     WHERE regne = 'Animalia'
-                        AND group2_inpn = 'Mollusques'
+                        AND group1_inpn = 'Mollusques'
                 )
             ),
             ('Animalia - Invertébrés - Crustacés', ARRAY(
@@ -122,14 +116,7 @@ WITH taxo_groups AS (
                         AND ordre = 'Neuroptera'
                 )
             ),
-            ('Animalia - Invertébrés - Lepidoptères', ARRAY(
-                    SELECT DISTINCT cd_ref
-                    FROM taxonomie.taxref
-                    WHERE regne = 'Animalia'
-                        AND phylum = 'Arthropoda'
-                        AND ordre = 'Lepidoptera'
-                )
-            ),
+
             ('Animalia - Invertébrés - Hemiptères', ARRAY(
                     SELECT DISTINCT cd_ref
                     FROM taxonomie.taxref
@@ -194,15 +181,7 @@ WITH taxo_groups AS (
                         )
                 )
             ),
-            ('Animalia - Invertébrés', ARRAY(
-                    SELECT DISTINCT cd_ref
-                    FROM taxonomie.taxref
-                    WHERE regne = 'Animalia'
-                        AND phylum IN (
-                            'Arthropoda', 'Annelida', 'Cnidaria', 'Mollusca', 'Platyhelminthes'
-                        )
-                )
-            ),
+
             ('Animalia - Autres', ARRAY(
                     SELECT DISTINCT cd_ref
                     FROM taxonomie.taxref
@@ -291,15 +270,15 @@ FROM (
         obs_nbr,
         0 AS sort_order
     FROM groups_counts
-) AS counts_and_total
 
---       UNION
 
---       SELECT
---           'Total' AS group_name,
---           SUM(taxon_nbr) AS taxon_nbr,
---           SUM(obs_nbr) AS obs_nbr,
---           1 AS sort_order
---       FROM groups_counts
---   ) AS counts_and_total
+       UNION
+
+       SELECT
+           'Total' AS group_name,
+           SUM(taxon_nbr) AS taxon_nbr,
+           SUM(obs_nbr) AS obs_nbr,
+           1 AS sort_order
+       FROM groups_counts
+   ) AS counts_and_total
 ORDER BY sort_order, group_name ;
