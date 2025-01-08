@@ -76,6 +76,25 @@ WITH taxo_groups AS (
                         AND group2_inpn = 'Crustacés'
                 )
             ),
+            
+            ('Animalia - Invertébrés - Autres arthropodes', ARRAY(
+                    SELECT DISTINCT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Animalia'
+                        AND phylum = 'Arthropoda'
+                        AND famille in ('Aeolothripidae','Amelidae','Amorphoscelidae','Anisolabididae','Arrhopalitidae','Bittacidae','Blaniulidae',
+'Blattidae','Boreidae','Bourletiellidae','Callipodidae','Ceratophyllidae','Craspedosomatidae','Cryptopidae',
+'Ctenophthalmidae','Cyphoderidae','Dignathodontidae','Ectobiidae','Embiidae','Empusidae','Entomobryidae',
+'Eremiaphilidae','Forficulidae','Geophilidae','Glomeridae','Henicopidae','Himantariidae','Hypogastruridae',
+'Hystrichopsyllidae','Inocelliidae','Isotomidae','Julidae','Kalotermitidae','Katiannidae','Labiduridae','Lepismatidae',
+'Linotaeniidae','Lithobiidae','Machilidae','Macrosternodesmidae','Mantidae','Meinertellidae','Neanuridae','Neelidae',
+'Odontellidae','Oligotomidae','Oncopoduridae','Onychiuridae','Panorpidae','Paradoxosomatidae','Pediculidae','Phlaeothripidae',
+'Poduridae','Polydesmidae','Polyxenidae','Psocidae','Pulicidae','Raphidiidae','Rhinotermitidae','Rivetinidae','Schendylidae',
+'Scolopendridae','Scutigeridae','Sialidae','Sminthuridae','Sminthurididae','Spongiphoridae','Stenopsocidae','Thripidae',
+'Tomoceridae','Trogiidae','Tullbergiidae','Vermipsyllidae','Xenidae')
+            )   
+            ),            
+            
             ('Animalia - Invertébrés - Coléoptères', ARRAY(
                     SELECT DISTINCT cd_ref
                     FROM taxonomie.taxref
@@ -97,7 +116,7 @@ WITH taxo_groups AS (
                     FROM taxonomie.taxref
                     WHERE regne = 'Animalia'
                         AND phylum = 'Arthropoda'
-                        AND ordre = 'Orthoptera'
+                        AND ordre in ('Orthoptera', 'Phasmatodea', 'Dictyoptera', 'Phasmida')
                 )
             ),
             ('Animalia - Invertébrés - Diptères', ARRAY(
@@ -187,8 +206,7 @@ WITH taxo_groups AS (
                     FROM taxonomie.taxref
                     WHERE regne = 'Animalia'
                         AND phylum NOT IN (
-                            'Arthropoda', 'Annelida', 'Cnidaria', 'Mollusca', 'Platyhelminthes',
-                            'Chordata'
+                            'Arthropoda', 'Mollusca','Chordata'
                         )
                 )
             ),
@@ -258,8 +276,11 @@ groups_counts AS (
         GROUP BY tg.group_name, t.cd_ref
     ) AS r
     GROUP BY r.group_name
-)
-SELECT
+),
+
+groupe as (
+select
+	'groupe' as type_groupe,
     group_name AS groupe,
     taxon_nbr AS taxon_nbre,
     obs_nbr AS obs_nbre
@@ -281,4 +302,92 @@ FROM (
            1 AS sort_order
        FROM groups_counts
    ) AS counts_and_total
-ORDER BY sort_order, group_name ;
+ORDER BY sort_order, group_name
+),
+taxo_meta_groups AS (
+    SELECT group_name, cd_refs
+    FROM (
+        VALUES
+
+                ('Animalia - Vertébrés', ARRAY(
+                    SELECT DISTINCT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Animalia'
+                        AND phylum = 'Chordata')
+                ),
+                ('Animalia - Invertébrés', ARRAY(
+                    SELECT DISTINCT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Animalia'
+                        AND phylum IN ('Arthropoda', 'Annelida', 'Cnidaria', 'Mollusca', 'Platyhelminthes'))
+                ),
+
+            ('Animalia - Autres', ARRAY(
+                    SELECT DISTINCT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne = 'Animalia'
+                        AND phylum NOT IN (
+                            'Arthropoda', 'Annelida', 'Cnidaria', 'Mollusca', 'Platyhelminthes',
+                            'Chordata'
+                        )
+                )
+            ),
+            
+            ('Végétaux et associés', ARRAY(
+                    SELECT DISTINCT cd_ref
+                    FROM taxonomie.taxref
+                    WHERE regne in ('Fungi','Plantae','Archaea','Bacteria','Chromista','Protozoa'
+
+                        )
+                )
+            )
+    ) AS tg (group_name, cd_refs)
+),
+groups_counts1 AS (
+    SELECT
+        r.group_name,
+        COUNT(r.nbre) AS taxon_nbr,
+        SUM(r.nbre) AS obs_nbr
+    FROM (
+        SELECT tg.group_name, COUNT(s.id_synthese) AS nbre
+        FROM gn_synthese.synthese AS s
+            JOIN taxonomie.taxref AS t
+                ON s.cd_nom = t.cd_nom
+            JOIN taxo_meta_groups AS tg
+                ON t.cd_ref = ANY(tg.cd_refs)
+        GROUP BY tg.group_name, t.cd_ref
+    ) AS r
+    GROUP BY r.group_name
+),
+
+meta_groupe as (
+select
+	'meta groupe' as type_groupe,
+    group_name AS groupe,
+    taxon_nbr AS taxon_nbre,
+    obs_nbr AS obs_nbre
+FROM (
+    SELECT
+        group_name,
+        taxon_nbr,
+        obs_nbr,
+        0 AS sort_order
+    FROM groups_counts1
+
+
+       UNION
+
+       SELECT
+           'VTotal' AS group_name,
+           SUM(taxon_nbr) AS taxon_nbr,
+           SUM(obs_nbr) AS obs_nbr,
+           1 AS sort_order
+       FROM groups_counts1
+   ) AS counts_and_total
+ORDER BY sort_order, group_name 
+)
+
+select * from groupe
+union 
+select * from meta_groupe
+order by type_groupe,groupe;
