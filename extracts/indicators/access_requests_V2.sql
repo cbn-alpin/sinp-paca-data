@@ -53,7 +53,7 @@ limit_taxo as (select
         re.additional_data ->> 'projectType' AS type_etude,
         re.additional_data ->> 'projectDescription' AS desc_etude,
         re.additional_data ->> 'kingdom' AS regne_concerne,
-        re.sensitive_access AS acces_donnees_senssible,
+        re.sensitive_access AS acces_donnees_sensibles,
         to_char(re.meta_create_date, 'DD/MM/YYYY') AS date_demande,
         to_char(re.processed_date, 'DD/MM/YYYY') AS date_traitement,
         CASE re.processed_state
