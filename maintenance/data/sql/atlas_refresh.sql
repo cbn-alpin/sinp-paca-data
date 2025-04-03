@@ -15,19 +15,19 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY atlas.vm_taxref;
 
 \echo '----------------------------------------------------------------'
 \echo 'Refreshing atlas.t_layer_territoire:'
-REFRESH MATERIALIZED VIEW atlas.t_layer_territoire;
+REFRESH MATERIALIZED VIEW CONCURRENTLY atlas.t_layer_territoire;
 
 \echo '----------------------------------------------------------------'
 \echo 'Refreshing atlas.vm_subdivided_area:'
-REFRESH MATERIALIZED VIEW atlas.vm_subdivided_area;
+REFRESH MATERIALIZED VIEW CONCURRENTLY atlas.vm_subdivided_area;
 
 \echo '----------------------------------------------------------------'
 \echo 'Refreshing atlas.l_communes:'
-REFRESH MATERIALIZED VIEW atlas.l_communes;
+REFRESH MATERIALIZED VIEW CONCURRENTLY atlas.l_communes;
 
 \echo '----------------------------------------------------------------'
 \echo 'Refreshing atlas.vm_communes:'
-REFRESH MATERIALIZED VIEW atlas.vm_communes;
+REFRESH MATERIALIZED VIEW CONCURRENTLY atlas.vm_communes;
 
 -- DATA
 
