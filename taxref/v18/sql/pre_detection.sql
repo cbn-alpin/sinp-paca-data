@@ -36,9 +36,9 @@ UPDATE taxonomie.bib_noms SET cd_nom = 57077 WHERE cd_nom = 658461 ;
 -- -------------------------------------------------------------------------------------------------
 -- Manage t_sensitivity_rules
 
-UPDATE taxonomie.t_sensitivity_rules SET cd_nom = 138121 WHERE cd_nom = 718726 ;
+UPDATE gn_sensitivity.t_sensitivity_rules SET cd_nom = 138121 WHERE cd_nom = 718726 ;
 
-UPDATE taxonomie.t_sensitivity_rules SET cd_nom = 124412 WHERE cd_nom = 124413 ;
+UPDATE gn_sensitivity.t_sensitivity_rules SET cd_nom = 124412 WHERE cd_nom = 124413 ;
 
 
 -- Commit if all good
