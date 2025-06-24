@@ -10,3 +10,7 @@ ALTER TABLE gn_synthese.synthese ENABLE TRIGGER tri_update_calculate_sensitivity
 UPDATE gn_commons.t_parameters
 SET parameter_value = 'Taxref V18.0'
 WHERE parameter_name = 'taxref_version' ;
+
+-- Avoid to crash script when we retry applying this script
+DELETE FROM taxonomie.t_meta_taxref
+WHERE referencial_name = 'Taxref' AND version = '18' ;
