@@ -1,0 +1,7 @@
+table_name,cd_nom,nom_complet,nb_occurence,plus_recente_diffusion,cd_nom_remplacement,cd_raison_suppression
+gn_sensitivity.t_sensitivity_rules,124413,"Sparganium natans L., 1754",1,17.0,,3
+gn_sensitivity.t_sensitivity_rules,718726,Odontites jaubertianus var. chrysanthus (Boreau) Bolliger,1,17.0,138121,1
+gn_synthese.synthese,138395,"Orchis mascula subsp. signifera (Vest) Soó, 1927",1,17.0,,2
+gn_synthese.synthese,658461,Lecidea atrobrunnea (Ramond ex Lam. & DC.) Schaer.,1,17.0,57077,1
+taxonomie.bib_noms,138395,"Orchis mascula subsp. signifera (Vest) Soó, 1927",1,17.0,,2
+taxonomie.bib_noms,658461,Lecidea atrobrunnea (Ramond ex Lam. & DC.) Schaer.,1,17.0,57077,1
