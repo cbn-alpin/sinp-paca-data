@@ -1,10 +1,5 @@
 -- Mise à jour TaxRef v17 vers v18 pour le SINP PACA
 
--- rétablir les contraintes de clés étrangères spécifiques à votre base
-ALTER TABLE gn_synthese.synthese ADD CONSTRAINT fk_synthese_cd_nom
-    FOREIGN KEY (cd_nom) REFERENCES taxonomie.taxref(cd_nom)
-    ON UPDATE CASCADE ;
-
 -- Enable trigger "tri_meta_dates_change_synthese"
 ALTER TABLE gn_synthese.synthese ENABLE TRIGGER tri_meta_dates_change_synthese ;
 
