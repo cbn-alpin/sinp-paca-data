@@ -41,3 +41,7 @@ Voici un exemple de requête pour détecter les géométries invalide de la Synt
             AND st_isvalid(the_geom_4326) = FALSE
         ORDER BY id_synthese ;
     ```
+# Export OPIE
+-Territoire : tout PACA
+-Période : du 01/01/2005 au 31/12/2024
+-Taxons concernés : familles suivantes : Papilionidae, Hesperiidae, Pieridae, Nymphalidae, Lycaenidae, Riodinidae, Zygaenidae.
