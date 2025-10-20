@@ -43,3 +43,5 @@ Voici un exemple de requête pour détecter les géométries invalide de la Synt
     ```
 # Export OPIE
 Territoire : tout PACA ; Période : du 01/01/2005 au 31/12/2024 ; Taxons concernés : familles suivantes : Papilionidae, Hesperiidae, Pieridae, Nymphalidae, Lycaenidae, Riodinidae, Zygaenidae.
+# Export LECA
+Territoire : départements 04,05,06 ; Période : 1990-2025 ; Taxons concernés : flore.
