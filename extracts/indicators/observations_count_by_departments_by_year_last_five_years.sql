@@ -46,4 +46,4 @@ WITH kingdoms_counts AS (
         FROM kingdoms_counts AS kc
         GROUP BY kc.annee,kc.area_code, kc.area_name
     ) AS counts_and_total
-    ORDER BY annee,area_code, sort_order, kingdom;
+    ORDER BY annee,area_code, sort_order, kingdom
