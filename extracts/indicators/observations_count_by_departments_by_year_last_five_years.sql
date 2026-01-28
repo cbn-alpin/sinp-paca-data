@@ -26,7 +26,7 @@ WITH kingdoms_counts AS (
         obs_nbr AS obs_nbre
     FROM (
         select
-        	annee
+        	annee,
             area_code,
             area_name,
             kingdom,
