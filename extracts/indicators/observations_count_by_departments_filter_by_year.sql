@@ -1,4 +1,4 @@
---nombre d'observations par départements, par règne pout une année (à choisir)
+--nombre d'observations par départements, par règne pour une année (à choisir)
 WITH kingdoms_counts AS (
         SELECT
             la.area_code,
