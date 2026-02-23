@@ -1,5 +1,5 @@
 --export d'après la liste de CD_nom fournits : ref_geo.tmp_jmg_dreal_liste_taxons_cdnoms
---date >= '2020-01-01'
+--date >= '2000-01-01'
 --donnnées localisées précisément
 
 
@@ -87,4 +87,4 @@ join taxons tx on t.cd_ref = tx.cd_ref
      LEFT JOIN ref_nomenclatures.t_nomenclatures n20 ON s.id_nomenclature_behaviour = n20.id_nomenclature
      LEFT JOIN ref_nomenclatures.t_nomenclatures ns ON s.id_nomenclature_sensitivity = ns.id_nomenclature
      LEFT JOIN ref_nomenclatures.t_nomenclatures nb ON s.id_nomenclature_blurring = nb.id_nomenclature
-where s.date_min >= '2020-01-01' and s.additional_data@>'{"precisionLabel": "précis"}' ;
+where s.date_min >= '2000-01-01' and s.additional_data@>'{"precisionLabel": "précis"}' ;
