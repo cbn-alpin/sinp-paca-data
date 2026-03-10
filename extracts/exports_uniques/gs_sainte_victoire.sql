@@ -24,7 +24,6 @@ select
 from gn_synthese.synthese s 
 join ref_geo.tmp_jmg_gs_ste_victoire sv on st_intersects(s.the_geom_local,sv.geom)
 join taxonomie.taxref t on s.cd_nom = t.cd_nom 
---join gn_synthese.cor_area_synthese cas on s.id_synthese = cas.id_synthese
 left JOIN gn_meta.t_datasets as j ON j.id_dataset = s.id_dataset
 left JOIN gn_meta.t_acquisition_frameworks AS c ON c.id_acquisition_framework = j.id_acquisition_framework
 left JOIN ref_nomenclatures.t_nomenclatures AS n ON s.id_nomenclature_valid_status = n.id_nomenclature 
